@@ -153,9 +153,8 @@ const Sidebar = () => {
               </button>
               {openMenus.blog && (
                 <div className="flex flex-col gap-1 mt-1 ml-6">
-                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/posts">Posts</Link>
-                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/post-authors">Post Authors</Link>
-                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/post-categories">Post Categories</Link>
+                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/posts">All Post</Link>
+                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/post-categories">Blog Categories</Link>
                 </div>
               )}
             </div>

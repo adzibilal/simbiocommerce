@@ -38,6 +38,7 @@ export const authOptions = {
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.role = user.role;
+        token.id = user.id;
       }
       if (trigger === "update" && session) {
         if (session.name) token.name = session.name;
@@ -50,6 +51,7 @@ export const authOptions = {
         session.user.role = token.role;
         session.user.name = token.name;
         session.user.image = token.image;
+        session.user.id = token.id;
       }
       return session;
     }

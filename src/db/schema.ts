@@ -127,3 +127,24 @@ export const coupons = sqliteTable('coupons', {
   status: text('status').default('active'),
   maxUsage: integer('max_usage').default(0),
 });
+
+export const postCategories = sqliteTable('post_categories', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+});
+
+export const posts = sqliteTable('posts', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
+  content: text('content'), // Markdown
+  featuredImage: text('featured_image'),
+  categoryId: text('category_id').references(() => postCategories.id),
+  authorId: text('author_id').references(() => users.id),
+  status: text('status').default('draft'), // draft, published
+  metaTitle: text('meta_title'),
+  metaDescription: text('meta_description'),
+  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
+  updatedAt: text('updated_at').$defaultFn(() => new Date().toISOString()),
+});
