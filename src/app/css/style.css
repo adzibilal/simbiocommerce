@@ -10,6 +10,24 @@
   body {
     @apply font-euclid-circular-a font-normal text-base text-dark-3 relative z-1;
   }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-4 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-5;
+  }
 }
 
 @layer components {
