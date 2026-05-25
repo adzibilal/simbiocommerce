@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { reviews, products, customers } from "@/db/schema";
+import { reviews, products, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -10,7 +10,7 @@ export async function getReviews() {
     .select({
       id: reviews.id,
       product: products.name,
-      customer: customers.name,
+      customer: users.name,
       rating: reviews.rating,
       comment: reviews.comment,
       date: reviews.date,
@@ -18,7 +18,7 @@ export async function getReviews() {
     })
     .from(reviews)
     .leftJoin(products, eq(reviews.productId, products.id))
-    .leftJoin(customers, eq(reviews.customerId, customers.id));
+    .leftJoin(users, eq(reviews.customerId, users.id));
 }
 
 export async function updateReviewStatus(id: string, status: string) {

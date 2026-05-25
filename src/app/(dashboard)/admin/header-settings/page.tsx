@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Header Settings" };
+
 import React from "react";
 
 const HeaderSettingsPage = () => {
@@ -34,7 +37,7 @@ const HeaderSettingsPage = () => {
               type="text"
               id="announcement"
               className="w-full bg-gray-1 rounded-md border border-gray-3 py-3 px-5 text-dark-4 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-              placeholder="e.g. Free shipping on orders over $50!"
+              placeholder="e.g. Gratis ongkir untuk pesanan di atas Rp 100.000!"
             />
           </div>
 

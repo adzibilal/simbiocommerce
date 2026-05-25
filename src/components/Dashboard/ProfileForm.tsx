@@ -1,13 +1,11 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { upload } from "@imagekit/next";
 import { toast } from "react-hot-toast";
-import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import { updateUserProfile } from "@/app/actions/user";
-import 'react-image-crop/dist/ReactCrop.css';
+import ImageCropUpload from "./ImageCropUpload";
 
 interface User {
   id: string;
@@ -27,99 +25,15 @@ const ProfileForm = ({ user }: { user: User }) => {
   const [address, setAddress] = useState(user.address || "");
   const [postalCode, setPostalCode] = useState(user.postalCode || "");
   const [image, setImage] = useState(user.image || "");
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
 
-  // Crop States
-  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
-  const [tempImageSrc, setTempImageSrc] = useState('');
-  const [crop, setCrop] = useState<Crop>();
-  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
-  const [aspect, setAspect] = useState<number | undefined>(1); // Default 1:1
-  const imgRef = useRef<HTMLImageElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setTempImageSrc(reader.result as string);
-        setIsCropModalOpen(true);
-      });
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const { width, height } = e.currentTarget;
-    const initialCrop = centerCrop(
-      makeAspectCrop(
-        {
-          unit: '%',
-          width: 90,
-        },
-        aspect || 1,
-        width,
-        height
-      ),
-      width,
-      height
-    );
-    setCrop(initialCrop);
-  };
-
-  const handleCropAndUpload = async () => {
-    if (!completedCrop || !imgRef.current) return;
-
-    setUploading(true);
-    setIsCropModalOpen(false); // Close modal
-    toast.loading("Uploading image...", { id: "upload-toast" });
-
-    try {
-      // Get cropped image as blob
-      const blob = await getCroppedImg(imgRef.current, completedCrop);
-      const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
-
-      // Get auth params
-      const response = await fetch("/api/upload-auth");
-      if (!response.ok) throw new Error("Failed to get auth params");
-
-      const data = await response.json();
-      const { signature, expire, token, publicKey, folder } = data;
-
-      // Upload
-      const uploadResponse = await upload({
-        file,
-        fileName: file.name,
-        publicKey,
-        signature,
-        expire,
-        token,
-        folder: folder,
-        onProgress: (event) => {
-          setProgress((event.loaded / event.total) * 100);
-        },
-      });
-
-      console.log("Upload response:", uploadResponse);
-      setImage(uploadResponse.url); // Save the secure URL from ImageKit
-      toast.success("Image uploaded successfully!", { id: "upload-toast" });
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Upload failed!", { id: "upload-toast" });
-    } finally {
-      setUploading(false);
-      setProgress(0);
-      // Reset file input
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+  const handleUploadComplete = (imageUrl: string) => {
+    setImage(imageUrl);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     toast.loading("Saving profile...", { id: "save-toast" });
-    
+
     try {
       const result = await updateUserProfile(user.id, {
         name,
@@ -145,7 +59,7 @@ const ProfileForm = ({ user }: { user: User }) => {
   return (
     <div className="bg-white p-6 rounded-2xl shadow-1 border border-gray-2 max-w-2xl font-euclid-circular-a">
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Avatar Upload (Floating Button) */}
+        {/* Avatar Upload */}
         <div className="flex flex-col items-center sm:flex-row sm:items-center sm:space-x-8 mb-6">
           <div className="relative h-32 w-32 rounded-full overflow-hidden border border-gray-3 group">
             {image ? (
@@ -162,24 +76,18 @@ const ProfileForm = ({ user }: { user: User }) => {
             </div>
           </div>
 
-          <div className="mt-4 sm:mt-0 text-center sm:text-left">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={onFileChange}
-              className="hidden"
-              accept="image/*"
+          <div className="mt-4 sm:mt-0 text-center sm:text-left flex-1 max-w-xs">
+            <ImageCropUpload
+              onUploadComplete={handleUploadComplete}
+              aspectRatio={1}
+              allowAspectChange={true}
+              circularCrop={true}
+              maxFileSize={2}
+              buttonText="Choose File"
+              uploadingText="Uploading..."
             />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="font-medium text-blue border border-blue py-2.5 px-5 rounded-lg hover:bg-blue/5 duration-200 disabled:opacity-50"
-              disabled={uploading}
-            >
-              {uploading ? `Uploading... ${Math.round(progress)}%` : "Choose File"}
-            </button>
             <p className="text-custom-xs text-body mt-2">
-              JPG, PNG or GIF. Max 2MB.
+              JPG, PNG or GIF. Max 2MB. Crop to 1:1 for best results.
             </p>
           </div>
         </div>
@@ -267,118 +175,8 @@ const ProfileForm = ({ user }: { user: User }) => {
           </button>
         </div>
       </form>
-
-      {/* Cropping Modal */}
-      {isCropModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] flex flex-col space-y-4 shadow-3">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold text-dark">Crop Your Photo</h3>
-              <button
-                onClick={() => setIsCropModalOpen(false)}
-                className="text-body hover:text-dark"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Aspect Ratio Buttons */}
-            <div className="flex space-x-2 text-custom-sm">
-              <button
-                onClick={() => { setAspect(1); setCrop(undefined); }}
-                className={`px-3 py-1.5 rounded-lg border ${aspect === 1 ? 'bg-blue text-white border-blue' : 'bg-gray-1 text-dark-4 border-gray-3'}`}
-              >
-                1:1
-              </button>
-              <button
-                onClick={() => { setAspect(16 / 9); setCrop(undefined); }}
-                className={`px-3 py-1.5 rounded-lg border ${aspect === 16 / 9 ? 'bg-blue text-white border-blue' : 'bg-gray-1 text-dark-4 border-gray-3'}`}
-              >
-                16:9
-              </button>
-              <button
-                onClick={() => { setAspect(undefined); setCrop(undefined); }}
-                className={`px-3 py-1.5 rounded-lg border ${aspect === undefined ? 'bg-blue text-white border-blue' : 'bg-gray-1 text-dark-4 border-gray-3'}`}
-              >
-                Custom
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-auto bg-gray-1 rounded-lg p-4 flex items-center justify-center">
-              <ReactCrop
-                crop={crop}
-                onChange={(c) => setCrop(c)}
-                onComplete={(c) => setCompletedCrop(c)}
-                aspect={aspect}
-                circularCrop={aspect === 1}
-              >
-                <img
-                  ref={imgRef}
-                  src={tempImageSrc}
-                  alt="Crop me"
-                  onLoad={onImageLoad}
-                  className="w-auto h-full"
-                />
-              </ReactCrop>
-            </div>
-
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setIsCropModalOpen(false)}
-                className="px-5 py-2.5 bg-gray-2 text-dark font-medium rounded-lg hover:bg-gray-3 duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCropAndUpload}
-                className="px-5 py-2.5 bg-blue text-white font-medium rounded-lg hover:bg-blue-dark duration-200"
-              >
-                Crop & Upload
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
-
-// Helper function to get cropped image
-function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<Blob> {
-  const canvas = document.createElement('canvas');
-  const scaleX = image.naturalWidth / image.width;
-  const scaleY = image.naturalHeight / image.height;
-  canvas.width = crop.width;
-  canvas.height = crop.height;
-  const ctx = canvas.getContext('2d');
-
-  if (!ctx) {
-    return Promise.reject(new Error('Failed to get canvas context'));
-  }
-
-  ctx.drawImage(
-    image,
-    crop.x * scaleX,
-    crop.y * scaleY,
-    crop.width * scaleX,
-    crop.height * scaleY,
-    0,
-    0,
-    crop.width,
-    crop.height
-  );
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error('Canvas is empty'));
-        return;
-      }
-      resolve(blob);
-    }, 'image/jpeg');
-  });
-}
 
 export default ProfileForm;

@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Coupons" };
+
 import React from "react";
 import { getCoupons } from "@/app/actions/coupon";
 import CouponManager from "@/components/Dashboard/CouponManager";

@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Post Authors" };
+
 import React from "react";
 
 const PostAuthorsPage = () => {

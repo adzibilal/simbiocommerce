@@ -175,6 +175,7 @@ const Billing = () => {
               <div className="mr-2 flex h-4 w-4 items-center justify-center rounded border border-gray-4">
                 <span className="opacity-0">
                   <svg
+                    className="text-blue"
                     width="24"
                     height="24"
                     viewBox="0 0 24 24"
@@ -187,7 +188,7 @@ const Billing = () => {
                       width="16"
                       height="16"
                       rx="4"
-                      fill="#3C50E0"
+                      fill="currentColor"
                     />
                     <path
                       fillRule="evenodd"

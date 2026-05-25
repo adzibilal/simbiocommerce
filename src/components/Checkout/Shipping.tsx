@@ -1,7 +1,43 @@
-import React, { useState } from "react";
+"use client";
+import React, { useState, useEffect } from "react";
+import { getProvinces, getCities } from "@/app/actions/shipping";
 
 const Shipping = () => {
   const [dropdown, setDropdown] = useState(false);
+  const [provinces, setProvinces] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      setLoadingProvinces(true);
+      const result = await getProvinces();
+      if (result.success) {
+        setProvinces(result.provinces);
+      }
+      setLoadingProvinces(false);
+    };
+
+    fetchProvinces();
+  }, []);
+
+  useEffect(() => {
+    const fetchCities = async () => {
+      if (!selectedProvince) return;
+      
+      setLoadingCities(true);
+      const result = await getCities(parseInt(selectedProvince));
+      if (result.success) {
+        setCities(result.cities);
+      }
+      setLoadingCities(false);
+    };
+
+    fetchCities();
+  }, [selectedProvince]);
 
   return (
     <div className="bg-white shadow-1 rounded-[10px] mt-7.5">
@@ -32,16 +68,24 @@ const Shipping = () => {
       {/* <!-- dropdown menu --> */}
       <div className={`p-4 sm:p-8.5 ${dropdown ? "block" : "hidden"}`}>
         <div className="mb-5">
-          <label htmlFor="countryName" className="block mb-2.5">
-            Country/ Region
+          <label htmlFor="province" className="block mb-2.5">
+            Province
             <span className="text-red">*</span>
           </label>
 
           <div className="relative">
-            <select className="w-full bg-gray-1 rounded-md border border-gray-3 text-dark-4 py-3 pl-5 pr-9 duration-200 appearance-none outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20">
-              <option value="0">Australia</option>
-              <option value="1">America</option>
-              <option value="2">England</option>
+            <select
+              value={selectedProvince}
+              onChange={(e) => setSelectedProvince(e.target.value)}
+              disabled={loadingProvinces}
+              className="w-full bg-gray-1 rounded-md border border-gray-3 text-dark-4 py-3 pl-5 pr-9 duration-200 appearance-none outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 disabled:opacity-50"
+            >
+              <option value="">Select Province</option>
+              {provinces.map((province) => (
+                <option key={province.province_id} value={province.province_id}>
+                  {province.province}
+                </option>
+              ))}
             </select>
 
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-dark-4">
@@ -57,7 +101,48 @@ const Shipping = () => {
                   d="M2.41469 5.03569L2.41467 5.03571L2.41749 5.03846L7.76749 10.2635L8.0015 10.492L8.23442 10.2623L13.5844 4.98735L13.5844 4.98735L13.5861 4.98569C13.6809 4.89086 13.8199 4.89087 13.9147 4.98569C14.0092 5.08024 14.0095 5.21864 13.9155 5.31345C13.9152 5.31373 13.915 5.31401 13.9147 5.31429L8.16676 10.9622L8.16676 10.9622L8.16469 10.9643C8.06838 11.0606 8.02352 11.0667 8.00039 11.0667C7.94147 11.0667 7.89042 11.0522 7.82064 10.9991L2.08526 5.36345C1.99127 5.26865 1.99154 5.13024 2.08609 5.03569C2.18092 4.94086 2.31986 4.94086 2.41469 5.03569Z"
                   fill=""
                   stroke=""
-                  stroke-width="0.666667"
+                  strokeWidth="0.666667"
+                />
+              </svg>
+            </span>
+          </div>
+        </div>
+
+        <div className="mb-5">
+          <label htmlFor="city" className="block mb-2.5">
+            City
+            <span className="text-red">*</span>
+          </label>
+
+          <div className="relative">
+            <select
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              disabled={!selectedProvince || loadingCities}
+              className="w-full bg-gray-1 rounded-md border border-gray-3 text-dark-4 py-3 pl-5 pr-9 duration-200 appearance-none outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 disabled:opacity-50"
+            >
+              <option value="">Select City</option>
+              {cities.map((city) => (
+                <option key={city.city_id} value={city.city_id}>
+                  {city.type} {city.city_name}
+                </option>
+              ))}
+            </select>
+
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-dark-4">
+              <svg
+                className="fill-current"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M2.41469 5.03569L2.41467 5.03571L2.41749 5.03846L7.76749 10.2635L8.0015 10.492L8.23442 10.2623L13.5844 4.98735L13.5844 4.98735L13.5861 4.98569C13.6809 4.89086 13.8199 4.89087 13.9147 4.98569C14.0092 5.08024 14.0095 5.21864 13.9155 5.31345C13.9152 5.31373 13.915 5.31401 13.9147 5.31429L8.16676 10.9622L8.16676 10.9622L8.16469 10.9643C8.06838 11.0606 8.02352 11.0667 8.00039 11.0667C7.94147 11.0667 7.89042 11.0522 7.82064 10.9991L2.08526 5.36345C1.99127 5.26865 1.99154 5.13024 2.08609 5.03569C2.18092 4.94086 2.31986 4.94086 2.41469 5.03569Z"
+                  fill=""
+                  stroke=""
+                  strokeWidth="0.666667"
                 />
               </svg>
             </span>

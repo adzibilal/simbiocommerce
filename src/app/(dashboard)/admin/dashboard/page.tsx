@@ -1,7 +1,48 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import StatCards from "@/components/Dashboard/StatCards";
+import { getRecentOrders, getTopProducts } from "@/app/actions/dashboard";
+import { formatDistanceToNow } from "date-fns";
+import { id } from "date-fns/locale";
+import { formatCurrency } from "@/lib/currency";
 
 const DashboardHome = () => {
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const [ordersResult, productsResult] = await Promise.all([
+        getRecentOrders(5),
+        getTopProducts(5),
+      ]);
+
+      if (ordersResult.success) {
+        setRecentOrders(ordersResult.orders);
+      }
+
+      if (productsResult.success) {
+        setTopProducts(productsResult.products);
+      }
+
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
+
+  const getInitials = (name: string | null) => {
+    if (!name) return "??";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <div className="space-y-6 font-euclid-circular-a">
       <div>
@@ -20,50 +61,46 @@ const DashboardHome = () => {
         <div className="bg-white p-6 rounded-2xl shadow-1 border border-gray-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-custom-lg font-bold text-dark">Recent Orders</h2>
-            <button className="text-custom-sm text-blue hover:text-blue-dark duration-200">
+            <a
+              href="/admin/orders"
+              className="text-custom-sm text-blue hover:text-blue-dark duration-200"
+            >
               View All
-            </button>
+            </a>
           </div>
           <div className="space-y-4">
-            {/* Mock Order 1 */}
-            <div className="flex items-center justify-between p-4 bg-gray-2 rounded-xl">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-full bg-blue/10 flex items-center justify-center text-blue font-bold">
-                  JD
+            {loading ? (
+              <div className="text-center py-4">Loading...</div>
+            ) : recentOrders.length === 0 ? (
+              <div className="text-center py-4 text-body">No orders yet</div>
+            ) : (
+              recentOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between p-4 bg-gray-2 rounded-xl"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="h-10 w-10 rounded-full bg-blue/10 flex items-center justify-center text-blue font-bold">
+                      {getInitials(order.customerName)}
+                    </div>
+                    <div>
+                      <span className="text-custom-sm font-medium text-dark">
+                        {order.customerName || "Guest"}
+                      </span>
+                      <p className="text-custom-xs text-body">
+                        {formatDistanceToNow(new Date(order.orderDate), {
+                          addSuffix: true,
+                          locale: id,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-custom-sm font-bold text-dark">
+                    {formatCurrency(order.grandTotal)}
+                  </span>
                 </div>
-                <div>
-                  <span className="text-custom-sm font-medium text-dark">John Doe</span>
-                  <p className="text-custom-xs text-body">2 mins ago</p>
-                </div>
-              </div>
-              <span className="text-custom-sm font-bold text-dark">$120.00</span>
-            </div>
-            {/* Mock Order 2 */}
-            <div className="flex items-center justify-between p-4 bg-gray-2 rounded-xl">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-full bg-blue/10 flex items-center justify-center text-blue font-bold">
-                  AS
-                </div>
-                <div>
-                  <span className="text-custom-sm font-medium text-dark">Alice Smith</span>
-                  <p className="text-custom-xs text-body">15 mins ago</p>
-                </div>
-              </div>
-              <span className="text-custom-sm font-bold text-dark">$85.50</span>
-            </div>
-            {/* Mock Order 3 */}
-            <div className="flex items-center justify-between p-4 bg-gray-2 rounded-xl">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-full bg-blue/10 flex items-center justify-center text-blue font-bold">
-                  BK
-                </div>
-                <div>
-                  <span className="text-custom-sm font-medium text-dark">Bob King</span>
-                  <p className="text-custom-xs text-body">1 hour ago</p>
-                </div>
-              </div>
-              <span className="text-custom-sm font-bold text-dark">$250.00</span>
-            </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -71,50 +108,51 @@ const DashboardHome = () => {
         <div className="bg-white p-6 rounded-2xl shadow-1 border border-gray-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-custom-lg font-bold text-dark">Top Products</h2>
-            <button className="text-custom-sm text-blue hover:text-blue-dark duration-200">
+            <a
+              href="/admin/products"
+              className="text-custom-sm text-blue hover:text-blue-dark duration-200"
+            >
               View All
-            </button>
+            </a>
           </div>
           <div className="space-y-4">
-            {/* Mock Product 1 */}
-            <div className="flex items-center justify-between p-4 bg-gray-2 rounded-xl">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-dark-5 border border-gray-3">
-                  📦
+            {loading ? (
+              <div className="text-center py-4">Loading...</div>
+            ) : topProducts.length === 0 ? (
+              <div className="text-center py-4 text-body">No products yet</div>
+            ) : (
+              topProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex items-center justify-between p-4 bg-gray-2 rounded-xl"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-dark-5 border border-gray-3 overflow-hidden">
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        "📦"
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-custom-sm font-medium text-dark">
+                        {product.name}
+                      </span>
+                      <p className="text-custom-xs text-body">
+                        Stock: {product.stock}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-custom-sm font-bold text-dark">
+                    {formatCurrency(product.price)}
+                  </span>
                 </div>
-                <div>
-                  <span className="text-custom-sm font-medium text-dark">Wireless Headphones</span>
-                  <p className="text-custom-xs text-body">45 Sales</p>
-                </div>
-              </div>
-              <span className="text-custom-sm font-bold text-dark">$2,250.00</span>
-            </div>
-            {/* Mock Product 2 */}
-            <div className="flex items-center justify-between p-4 bg-gray-2 rounded-xl">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-dark-5 border border-gray-3">
-                  📦
-                </div>
-                <div>
-                  <span className="text-custom-sm font-medium text-dark">Smart Watch</span>
-                  <p className="text-custom-xs text-body">32 Sales</p>
-                </div>
-              </div>
-              <span className="text-custom-sm font-bold text-dark">$1,600.00</span>
-            </div>
-            {/* Mock Product 3 */}
-            <div className="flex items-center justify-between p-4 bg-gray-2 rounded-xl">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-dark-5 border border-gray-3">
-                  📦
-                </div>
-                <div>
-                  <span className="text-custom-sm font-medium text-dark">Bluetooth Speaker</span>
-                  <p className="text-custom-xs text-body">28 Sales</p>
-                </div>
-              </div>
-              <span className="text-custom-sm font-bold text-dark">$840.00</span>
-            </div>
+              ))
+            )}
           </div>
         </div>
       </div>

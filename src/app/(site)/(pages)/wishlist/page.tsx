@@ -1,12 +1,14 @@
 import React from "react";
 import { Wishlist } from "@/components/Wishlist";
-import { Metadata } from "next";
+import { generatePageMetadata } from "@/lib/metadata";
+import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Wishlist Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Wishlist Page for NextCommerce Template",
-  // other metadata
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata("/wishlist", {
+    title: "Wishlist | SimbioCommerce",
+    description: "Your saved products.",
+  });
+}
 
 const WishlistPage = () => {
   return (

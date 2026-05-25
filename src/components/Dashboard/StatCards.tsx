@@ -1,10 +1,33 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
+import { getDashboardStats } from "@/app/actions/dashboard";
+import { formatCurrency } from "@/lib/currency";
 
 const StatCards = () => {
-  const stats = [
+  const [stats, setStats] = useState({
+    totalSales: 0,
+    totalOrders: 0,
+    totalProducts: 0,
+    totalCustomers: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const result = await getDashboardStats();
+      if (result.success) {
+        setStats(result.stats);
+      }
+      setLoading(false);
+    };
+
+    fetchStats();
+  }, []);
+
+  const statCards = [
     {
       name: "Total Sales",
-      value: "$24,500",
+      value: loading ? "..." : formatCurrency(stats.totalSales),
       change: "+12%",
       changeType: "increase",
       icon: (
@@ -26,7 +49,7 @@ const StatCards = () => {
     },
     {
       name: "Total Orders",
-      value: "1,450",
+      value: loading ? "..." : stats.totalOrders.toString(),
       change: "+5%",
       changeType: "increase",
       icon: (
@@ -48,7 +71,7 @@ const StatCards = () => {
     },
     {
       name: "Total Products",
-      value: "120",
+      value: loading ? "..." : stats.totalProducts.toString(),
       change: "0%",
       changeType: "neutral",
       icon: (
@@ -70,7 +93,7 @@ const StatCards = () => {
     },
     {
       name: "Total Customers",
-      value: "850",
+      value: loading ? "..." : stats.totalCustomers.toString(),
       change: "+8%",
       changeType: "increase",
       icon: (
@@ -94,7 +117,7 @@ const StatCards = () => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-euclid-circular-a">
-      {stats.map((stat) => (
+      {statCards.map((stat) => (
         <div
           key={stat.name}
           className="bg-white p-6 rounded-2xl shadow-1 border border-gray-2 hover:shadow-2 duration-200"

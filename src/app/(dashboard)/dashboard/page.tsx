@@ -36,7 +36,7 @@ const DashboardHome = () => {
                   <p className="text-custom-xs text-body">2 mins ago</p>
                 </div>
               </div>
-              <span className="text-custom-sm font-bold text-dark">$120.00</span>
+              <span className="text-custom-sm font-bold text-dark">Rp 120.000</span>
             </div>
             {/* Mock Order 2 */}
             <div className="flex items-center justify-between p-4 bg-gray-2 rounded-xl">
@@ -49,7 +49,7 @@ const DashboardHome = () => {
                   <p className="text-custom-xs text-body">15 mins ago</p>
                 </div>
               </div>
-              <span className="text-custom-sm font-bold text-dark">$85.50</span>
+              <span className="text-custom-sm font-bold text-dark">Rp 85.500</span>
             </div>
             {/* Mock Order 3 */}
             <div className="flex items-center justify-between p-4 bg-gray-2 rounded-xl">
@@ -62,7 +62,7 @@ const DashboardHome = () => {
                   <p className="text-custom-xs text-body">1 hour ago</p>
                 </div>
               </div>
-              <span className="text-custom-sm font-bold text-dark">$250.00</span>
+              <span className="text-custom-sm font-bold text-dark">Rp 250.000</span>
             </div>
           </div>
         </div>
@@ -87,7 +87,7 @@ const DashboardHome = () => {
                   <p className="text-custom-xs text-body">45 Sales</p>
                 </div>
               </div>
-              <span className="text-custom-sm font-bold text-dark">$2,250.00</span>
+              <span className="text-custom-sm font-bold text-dark">Rp 2.250.000</span>
             </div>
             {/* Mock Product 2 */}
             <div className="flex items-center justify-between p-4 bg-gray-2 rounded-xl">
@@ -100,7 +100,7 @@ const DashboardHome = () => {
                   <p className="text-custom-xs text-body">32 Sales</p>
                 </div>
               </div>
-              <span className="text-custom-sm font-bold text-dark">$1,600.00</span>
+              <span className="text-custom-sm font-bold text-dark">Rp 1.600.000</span>
             </div>
             {/* Mock Product 3 */}
             <div className="flex items-center justify-between p-4 bg-gray-2 rounded-xl">
@@ -113,7 +113,7 @@ const DashboardHome = () => {
                   <p className="text-custom-xs text-body">28 Sales</p>
                 </div>
               </div>
-              <span className="text-custom-sm font-bold text-dark">$840.00</span>
+              <span className="text-custom-sm font-bold text-dark">Rp 840.000</span>
             </div>
           </div>
         </div>

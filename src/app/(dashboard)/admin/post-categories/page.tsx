@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Post Categories" };
+
 import React from "react";
 import { getPostCategories } from "@/app/actions/post-category";
 import PostCategoryManager from "@/components/Dashboard/PostCategoryManager";

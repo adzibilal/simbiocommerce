@@ -7,8 +7,13 @@ import BestSeller from "./BestSeller";
 import CounDown from "./Countdown";
 import Testimonials from "./Testimonials";
 import Newsletter from "../Common/Newsletter";
+import { getActiveCountdown } from "@/app/actions/countdown";
+import { getActiveTestimonials } from "@/app/actions/testimonial";
 
-const Home = () => {
+const Home = async () => {
+  const countdownData = await getActiveCountdown();
+  const testimonials = await getActiveTestimonials();
+
   return (
     <main>
       <Hero />
@@ -16,8 +21,8 @@ const Home = () => {
       <NewArrival />
       <PromoBanner />
       <BestSeller />
-      <CounDown />
-      <Testimonials />
+      <CounDown data={countdownData} />
+      <Testimonials data={testimonials} />
       <Newsletter />
     </main>
   );

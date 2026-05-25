@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Orders" };
+
 import React from "react";
 import { getOrders } from "@/app/actions/order";
+import { formatCurrency } from "@/lib/currency";
 
 const OrdersPage = async () => {
   const orders = await getOrders();
@@ -39,7 +43,7 @@ const OrdersPage = async () => {
                     {order.date}
                   </td>
                   <td className="px-6 py-4 text-custom-sm font-medium text-dark">
-                    {`$${(order.total / 100).toFixed(2)}`}
+                    {formatCurrency(order.total)}
                   </td>
                   <td className="px-6 py-4">
                     <span

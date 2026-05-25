@@ -7,8 +7,21 @@ import {
 } from "@/redux/features/cart-slice";
 
 import Image from "next/image";
+import { formatCurrency } from "@/lib/currency";
 
-const SingleItem = ({ item }) => {
+interface CartItemProps {
+  item: {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    imageUrl?: string;
+    weight: number;
+    stock: number;
+  };
+}
+
+const SingleItem = ({ item }: CartItemProps) => {
   const [quantity, setQuantity] = useState(item.quantity);
 
   const dispatch = useDispatch<AppDispatch>();
@@ -37,12 +50,12 @@ const SingleItem = ({ item }) => {
         <div className="flex items-center justify-between gap-5">
           <div className="w-full flex items-center gap-5.5">
             <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5">
-              <Image width={200} height={200} src={item.imgs?.thumbnails[0]} alt="product" />
+               <Image width={200} height={200} src={item.imageUrl || "/images/products/default-product.png"} alt="product" />
             </div>
 
             <div>
-              <h3 className="text-dark ease-out duration-200 hover:text-blue">
-                <a href="#"> {item.title} </a>
+               <h3 className="text-dark ease-out duration-200 hover:text-blue">
+                <a href="#"> {item.name} </a>
               </h3>
             </div>
           </div>
@@ -50,7 +63,7 @@ const SingleItem = ({ item }) => {
       </div>
 
       <div className="min-w-[180px]">
-        <p className="text-dark">${item.discountedPrice}</p>
+        <p className="text-dark">{formatCurrency(item.price)}</p>
       </div>
 
       <div className="min-w-[275px]">
@@ -106,7 +119,7 @@ const SingleItem = ({ item }) => {
       </div>
 
       <div className="min-w-[200px]">
-        <p className="text-dark">${item.discountedPrice * quantity}</p>
+        <p className="text-dark">{formatCurrency(item.price * quantity)}</p>
       </div>
 
       <div className="min-w-[50px] flex justify-end">

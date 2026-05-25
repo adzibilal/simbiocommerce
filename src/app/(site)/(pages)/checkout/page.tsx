@@ -1,12 +1,14 @@
 import React from "react";
 import Checkout from "@/components/Checkout";
+import { generatePageMetadata } from "@/lib/metadata";
+import type { Metadata } from "next";
 
-import { Metadata } from "next";
-export const metadata: Metadata = {
-  title: "Checkout Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Checkout Page for NextCommerce Template",
-  // other metadata
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata("/checkout", {
+    title: "Checkout | SimbioCommerce",
+    description: "Complete your purchase securely.",
+  });
+}
 
 const CheckoutPage = () => {
   return (

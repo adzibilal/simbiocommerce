@@ -118,3 +118,27 @@ export async function getProductById(id: string) {
     images: images.map(img => ({ imageUrl: img.imageUrl, isPrimary: img.isPrimary || false }))
   };
 }
+
+export async function getProductBySlug(slug: string) {
+  const result = await db
+    .select({
+      id: products.id,
+      name: products.name,
+      slug: products.slug,
+      price: products.price,
+      stock: products.stock,
+      weight: products.weight,
+      description: products.description,
+      isActive: products.isActive,
+      categoryId: products.categoryId,
+      sku: products.sku,
+      category: categories.name,
+      imageUrl: productImages.imageUrl,
+    })
+    .from(products)
+    .leftJoin(categories, eq(products.categoryId, categories.id))
+    .leftJoin(productImages, and(eq(products.id, productImages.productId), eq(productImages.isPrimary, true)))
+    .where(eq(products.slug, slug));
+  
+  return result[0] || null;
+}

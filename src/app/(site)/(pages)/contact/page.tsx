@@ -1,11 +1,13 @@
 import Contact from "@/components/Contact";
+import { generatePageMetadata } from "@/lib/metadata";
+import type { Metadata } from "next";
 
-import { Metadata } from "next";
-export const metadata: Metadata = {
-  title: "Contact Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Contact Page for NextCommerce Template",
-  // other metadata
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata("/contact", {
+    title: "Contact Us | SimbioCommerce",
+    description: "Get in touch with our support team.",
+  });
+}
 
 const ContactPage = () => {
   return (

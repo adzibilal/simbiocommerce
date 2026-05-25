@@ -2,8 +2,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
+import Image from "next/image";
 
-const Sidebar = () => {
+interface StoreInfo {
+  storeName: string | null;
+  logoUrl: string | null;
+}
+
+const Sidebar = ({ storeInfo }: { storeInfo: StoreInfo | null }) => {
   const pathname = usePathname();
   // Accordion tertutup secara default
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
@@ -16,8 +22,20 @@ const Sidebar = () => {
     <div className="hidden lg:flex lg:flex-shrink-0 font-euclid-circular-a">
       <div className="flex flex-col w-64 bg-white border-r border-gray-3 h-screen">
         <div className="flex items-center h-16 flex-shrink-0 px-6 bg-white border-b border-gray-3">
-          <span className="text-xl font-bold text-blue">Simbio</span>
-          <span className="text-xl font-bold text-dark">Admin</span>
+          {storeInfo?.logoUrl ? (
+            <Image
+              src={storeInfo.logoUrl}
+              alt={storeInfo.storeName || "Logo"}
+              width={120}
+              height={32}
+              className="h-8 w-auto object-contain"
+            />
+          ) : (
+            <>
+              <span className="text-xl font-bold text-blue">{storeInfo?.storeName?.slice(0, Math.ceil((storeInfo.storeName?.length || 6) / 2)) || "Simbio"}</span>
+              <span className="text-xl font-bold text-dark">{storeInfo?.storeName?.slice(Math.ceil((storeInfo.storeName?.length || 6) / 2)) || "Admin"}</span>
+            </>
+          )}
         </div>
         
         {/* Menu Container */}
@@ -111,29 +129,31 @@ const Sidebar = () => {
               </Link>
             </div>
 
-            {/* Customization (Collapsible) */}
+            {/* Homepage Content (Collapsible) */}
             <div className="flex flex-col gap-1">
               <button 
                 type="button" 
                 className="flex items-center justify-between w-full font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm text-left hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent"
-                onClick={() => toggleMenu("customization")}
+                onClick={() => toggleMenu("homepage")}
               >
                 <span className="flex items-center gap-2.5">
-                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" clipRule="evenodd" d="M7.97506 1.14576H14.026C14.2276 1.14570 14.3821 1.14566 14.5171 1.16016C15.7585 1.29337 16.7086 2.31274 16.7662 3.54754C17.8577 3.87348 18.6355 4.88346 18.6496 6.04183C19.2005 6.20714 19.6757 6.46788 20.0647 6.88805C20.6623 7.53361 20.8475 8.3292 20.8546 9.25855C20.8614 10.152 20.7022 11.2811 20.5045 12.6832L20.1021 15.5373C19.9475 16.6337 19.8219 17.5244 19.6266 18.2223C19.4222 18.9526 19.1209 19.5534 18.5631 20.0152C18.0097 20.4734 17.3532 20.671 16.5772 20.7641C15.8269 20.8541 14.883 20.8541 13.7077 20.8541H8.29361C7.11836 20.8541 6.17441 20.8541 5.42409 20.7641C4.64808 20.671 3.99156 20.4734 3.43818 20.0152C2.88038 19.5534 2.57911 18.9526 2.37471 18.2223C2.17935 17.5244 2.05379 16.6337 1.89923 15.5373L1.49683 12.6832C1.29912 11.2811 1.13991 10.152 1.14669 9.25855C1.15375 8.3292 1.33896 7.53361 1.93661 6.88805C2.32551 6.46798 2.80056 6.20726 3.35132 6.04194C3.36535 4.88346 4.14322 3.87338 5.23487 3.54748C5.29253 2.3127 6.24263 1.29337 7.48394 1.16016C7.61901 1.14566 7.77352 1.1457 7.97506 1.14576ZM4.75725 5.80044C5.6059 5.72907 6.64624 5.72908 7.8986 5.7291H14.1027C15.3549 5.72908 16.3951 5.72908 17.2436 5.80041C17.1179 5.24341 16.6204 4.81243 16.0072 4.81243H5.9937C5.38053 4.81243 4.88299 5.24343 4.75725 5.80044ZM14.3704 2.52731C14.8748 2.58143 15.2734 2.95738 15.371 3.43743H6.63008C6.72772 2.95738 7.12631 2.58143 7.63066 2.52731C7.68225 2.52177 7.75577 2.52077 8.01322 2.52077H13.9879C14.2453 2.52077 14.3188 2.52177 14.3704 2.52731ZM2.9456 7.82216C3.22326 7.52225 3.64079 7.32332 4.4521 7.21541C5.27814 7.10554 6.38393 7.1041 7.95034 7.1041H14.051C15.6174 7.1041 16.7232 7.10554 17.5492 7.21541C18.3605 7.32332 18.778 7.52225 19.0557 7.82216C19.3269 8.11511 19.4739 8.51376 19.4796 9.26899C19.4856 10.0482 19.3425 11.0758 19.135 12.5475L18.7473 15.2975C18.5843 16.4533 18.4702 17.2525 18.3025 17.8517C18.1409 18.4288 17.9509 18.737 17.6862 18.9561C17.4172 19.1789 17.056 19.3218 16.4134 19.3989C15.7545 19.4779 14.8933 19.4791 13.6632 19.4791H8.33806C7.108 19.4791 6.24676 19.4779 5.58791 19.3989C4.9453 19.3218 4.58411 19.1789 4.31507 18.9561C4.05044 18.737 3.86035 18.4288 3.69882 17.8517C3.5311 17.2525 3.41697 16.4533 3.25402 15.2975L2.8663 12.5475C2.65881 11.0758 2.51574 10.0482 2.52165 9.26899C2.52739 8.51376 2.67439 8.11511 2.9456 7.82216Z" fill="currentColor"></path></svg>
-                  Customization
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <line x1="3" y1="9" x2="21" y2="9" />
+                    <line x1="9" y1="21" x2="9" y2="9" />
+                  </svg>
+                  Homepage
                 </span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" className={`transform transition-transform ${openMenus.customization ? "rotate-180" : ""}`}><path d="M4.79175 7.39584L10.0001 12.6042L15.2084 7.39585" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" className={`transform transition-transform ${openMenus.homepage ? "rotate-180" : ""}`}><path d="M4.79175 7.39584L10.0001 12.6042L15.2084 7.39585" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
               </button>
-              {openMenus.customization && (
+              {openMenus.homepage && (
                 <div className="flex flex-col gap-1 mt-1 ml-6">
-                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/seo-settings">SEO Settings</Link>
-                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/header-settings">Header Settings</Link>
-                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/hero-banner">Hero Banner</Link>
-                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/hero-slider">Hero Slider</Link>
-                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/countdown">Countdown</Link>
-                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/privacy-policy">Privacy Policy</Link>
-                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/terms-conditions">Terms &amp; Conditions</Link>
-                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/testimonials">Testimonials</Link>
+                  <Link className={`flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent ${pathname === "/admin/hero-slider" ? "bg-blue/10 text-blue" : ""}`} href="/admin/hero-slider">Hero Slider</Link>
+                  <Link className={`flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent ${pathname === "/admin/hero-features" ? "bg-blue/10 text-blue" : ""}`} href="/admin/hero-features">Hero Features</Link>
+                  <Link className={`flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent ${pathname === "/admin/hero-banner" ? "bg-blue/10 text-blue" : ""}`} href="/admin/hero-banner">Promo Banners</Link>
+                  <Link className={`flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent ${pathname === "/admin/countdown" ? "bg-blue/10 text-blue" : ""}`} href="/admin/countdown">Countdown Timer</Link>
+                  <Link className={`flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent ${pathname === "/admin/testimonials" ? "bg-blue/10 text-blue" : ""}`} href="/admin/testimonials">Testimonials</Link>
+                  <Link className={`flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent ${pathname === "/admin/newsletters" ? "bg-blue/10 text-blue" : ""}`} href="/admin/newsletters">Newsletter</Link>
                 </div>
               )}
             </div>
@@ -146,7 +166,9 @@ const Sidebar = () => {
                 onClick={() => toggleMenu("blog")}
               >
                 <span className="flex items-center gap-2.5">
-                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="10.5417" cy="11" rx="2.63542" ry="2.75" stroke="currentColor" strokeWidth="1.5"></ellipse><path d="M12.093 1.97281C11.7701 1.83325 11.3608 1.83325 10.5422 1.83325C9.72355 1.83325 9.31424 1.83325 8.99136 1.97281C8.56086 2.15888 8.21883 2.51578 8.04051 2.965C7.95911 3.17006 7.92725 3.40854 7.91479 3.75641C7.89646 4.26763 7.64522 4.74082 7.22064 4.9966C6.79607 5.25239 6.27773 5.24283 5.8443 5.00378C5.54935 4.84111 5.3355 4.75066 5.1246 4.72168C4.66262 4.65822 4.19539 4.78885 3.82571 5.08485C3.54846 5.30685 3.3438 5.67674 2.93448 6.41652C2.52516 7.1563 2.32051 7.52619 2.27489 7.88775C2.21407 8.36982 2.33926 8.85736 2.62293 9.24311C2.7524 9.41918 2.93437 9.56719 3.21678 9.75236C3.63196 10.0246 3.89909 10.4883 3.89907 10.9999C3.89904 11.5115 3.63191 11.9752 3.21678 12.2474C2.93432 12.4326 2.75233 12.5806 2.62284 12.7567C2.33917 13.1424 2.21398 13.63 2.2748 14.112C2.32042 14.4736 2.52508 14.8435 2.93439 15.5833C3.34371 16.323 3.54837 16.6929 3.82563 16.9149C4.19531 17.2109 4.66253 17.3416 5.12452 17.2781C5.3354 17.2491 5.54924 17.1587 5.84416 16.996C6.27763 16.757 6.796 16.7474 7.2206 17.0032C7.64521 17.259 7.89646 17.7322 7.91479 18.2435C7.92725 18.5913 7.95911 18.8298 8.04051 19.0348C8.21883 19.4841 8.56086 19.841 8.99136 20.027C9.31424 20.1666 9.72355 20.1666 10.5422 20.1666C11.3608 20.1666 11.7701 20.1666 12.093 20.027C12.5235 19.841 12.8655 19.4841 13.0439 19.0348C13.1253 18.8298 13.1571 18.5913 13.1696 18.2434C13.1879 17.7322 13.4391 17.259 13.8637 17.0032C14.2883 16.7474 14.8067 16.7569 15.2402 16.996C15.5351 17.1586 15.7489 17.2491 15.9598 17.278C16.4218 17.3415 16.889 17.2109 17.2587 16.9149C17.5359 16.6929 17.7406 16.323 18.1499 15.5832C18.5592 14.8434 18.7639 14.4735 18.8095 14.112C18.8703 13.6299 18.7451 13.1424 18.4614 12.7566C18.332 12.5805 18.15 12.4325 17.8675 12.2473C17.4524 11.9751 17.1853 11.5114 17.1853 10.9998C17.1853 10.4883 17.4524 10.0247 17.8675 9.75251C18.15 9.5673 18.332 9.41927 18.4615 9.24317C18.7452 8.85742 18.8704 8.36988 18.8096 7.88781C18.764 7.52626 18.5593 7.15637 18.15 6.41659C17.7407 5.6768 17.536 5.30691 17.2587 5.08491C16.8891 4.78892 16.4218 4.65828 15.9599 4.72175C15.749 4.75072 15.5351 4.84116 15.2402 5.00382C14.8067 5.24288 14.2884 5.25244 13.8638 4.99663C13.4392 4.74083 13.1879 4.26761 13.1696 3.75636C13.1571 3.40852 13.1253 3.17005 13.0439 2.965C12.8655 2.51578 12.5235 2.15888 12.093 1.97281Z" stroke="currentColor" strokeWidth="1.5"></path></svg>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                  </svg>
                   Blog
                 </span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" className={`transform transition-transform ${openMenus.blog ? "rotate-180" : ""}`}><path d="M4.79175 7.39584L10.0001 12.6042L15.2084 7.39585" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
@@ -155,6 +177,32 @@ const Sidebar = () => {
                 <div className="flex flex-col gap-1 mt-1 ml-6">
                   <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/posts">All Post</Link>
                   <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/post-categories">Blog Categories</Link>
+                </div>
+              )}
+            </div>
+
+            {/* Store Settings (Collapsible) */}
+            <div className="flex flex-col gap-1">
+              <button 
+                type="button" 
+                className="flex items-center justify-between w-full font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm text-left hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent"
+                onClick={() => toggleMenu("storeSettings")}
+              >
+                <span className="flex items-center gap-2.5">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  Store Settings
+                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" className={`transform transition-transform ${openMenus.storeSettings ? "rotate-180" : ""}`}><path d="M4.79175 7.39584L10.0001 12.6042L15.2084 7.39585" stroke="#667085" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+              </button>
+              {openMenus.storeSettings && (
+                <div className="flex flex-col gap-1 mt-1 ml-6">
+                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/store-settings/profile">Store Profile</Link>
+                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/store-settings/payment">Payment Settings</Link>
+                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/store-settings/courier">Courier Settings</Link>
+                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/seo-settings">SEO Settings</Link>
                 </div>
               )}
             </div>

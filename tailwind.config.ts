@@ -51,9 +51,9 @@ const config: Config = {
         7: "#374151",
       },
       blue: {
-        DEFAULT: "#3C50E0",
-        dark: "#1C3FB7",
-        light: "#5475E5",
+        DEFAULT: "rgb(var(--primary-rgb) / <alpha-value>)",
+        dark: "rgb(var(--primary-dark-rgb) / <alpha-value>)",
+        light: "rgb(var(--primary-light-rgb) / <alpha-value>)",
         "light-2": "#8099EC",
         "light-3": "#ADBCF2",
         "light-4": "#C3CEF6",

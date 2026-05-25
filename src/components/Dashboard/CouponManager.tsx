@@ -7,7 +7,7 @@ import { createCoupon, updateCoupon, deleteCoupon } from "@/app/actions/coupon";
 import { DayPicker } from "react-day-picker";
 import { format } from "date-fns";
 import "react-day-picker/dist/style.css";
-import { createPortal } from "react-dom";
+import ModalPortal from "./ModalPortal";
 
 interface Coupon {
   id: string;
@@ -25,10 +25,10 @@ interface CouponManagerProps {
 
 const CouponManager = ({ initialCoupons }: CouponManagerProps) => {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCoupon, setCurrentCoupon] = useState<Coupon | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Coupon | null>(null);
   
   // Form state
   const [code, setCode] = useState("");
@@ -49,7 +49,6 @@ const CouponManager = ({ initialCoupons }: CouponManagerProps) => {
   const dateRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMounted(true);
     const handleClickOutside = (event: MouseEvent) => {
       if (typeRef.current && !typeRef.current.contains(event.target as Node)) {
         setIsTypeDropdownOpen(false);
@@ -97,8 +96,8 @@ const CouponManager = ({ initialCoupons }: CouponManagerProps) => {
     }
 
     // Validasi Diskon
-    const discountNum = parseFloat(discount);
-    if (isNaN(discountNum)) {
+    const discountNum = Number.parseFloat(discount);
+    if (Number.isNaN(discountNum)) {
       toast.error("Please enter a valid number for discount");
       return;
     }
@@ -127,8 +126,8 @@ const CouponManager = ({ initialCoupons }: CouponManagerProps) => {
     }
 
     // Validasi Max Usage
-    const maxUsageNum = parseInt(maxUsage);
-    if (isNaN(maxUsageNum) || maxUsageNum < 0) {
+    const maxUsageNum = Number.parseInt(maxUsage, 10);
+    if (Number.isNaN(maxUsageNum) || maxUsageNum < 0) {
       toast.error("Max usage must be a valid positive number or 0");
       return;
     }
@@ -163,13 +162,18 @@ const CouponManager = ({ initialCoupons }: CouponManagerProps) => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this coupon?")) return;
-    
+  const handleDeleteClick = (coupon: Coupon) => {
+    setDeleteTarget(coupon);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+
     toast.loading("Deleting coupon...", { id: "coupon-toast" });
     try {
-      await deleteCoupon(id);
+      await deleteCoupon(deleteTarget.id);
       toast.success("Coupon deleted successfully!", { id: "coupon-toast" });
+      setDeleteTarget(null);
       router.refresh();
     } catch (error) {
       console.error("Delete error:", error);
@@ -219,7 +223,7 @@ const CouponManager = ({ initialCoupons }: CouponManagerProps) => {
                     {coupon.type}
                   </td>
                   <td className="px-6 py-4 text-custom-sm text-body">
-                    {coupon.type === "percentage" ? `${coupon.discount}%` : `Rp ${parseInt(coupon.discount).toLocaleString()}`}
+                    {coupon.type === "percentage" ? `${coupon.discount}%` : `Rp ${Number.parseInt(coupon.discount, 10).toLocaleString()}`}
                   </td>
                   <td className="px-6 py-4 text-custom-sm text-body">
                     {coupon.maxUsage === 0 || !coupon.maxUsage ? "Unlimited" : coupon.maxUsage}
@@ -233,14 +237,16 @@ const CouponManager = ({ initialCoupons }: CouponManagerProps) => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">
-                    <button 
+                    <button
+                      type="button"
                       onClick={() => openEditModal(coupon)}
                       className="text-blue hover:text-blue-dark duration-200"
                     >
                       Edit
                     </button>
-                    <button 
-                      onClick={() => handleDelete(coupon.id)}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClick(coupon)}
                       className="text-red hover:text-red-dark duration-200"
                     >
                       Delete
@@ -260,17 +266,25 @@ const CouponManager = ({ initialCoupons }: CouponManagerProps) => {
         </div>
       </div>
 
-      {/* Modal - Rendered via Portal to body */}
-      {isModalOpen && mounted && createPortal(
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 font-euclid-circular-a">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-3 relative">
+      {isModalOpen && (
+        <ModalPortal>
+          <div className="fixed inset-0 left-0 top-0 z-[200] flex min-h-[100dvh] w-full items-center justify-center p-4 font-euclid-circular-a">
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+              onClick={() => setIsModalOpen(false)}
+              aria-label="Close modal"
+            />
+            <div className="relative z-[1] bg-white rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto space-y-4 shadow-3">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-dark">
                 {isEditing ? "Edit Coupon" : "Add New Coupon"}
               </h3>
-              <button 
+              <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-body hover:text-dark"
+                className="text-body hover:text-dark p-1 rounded-lg hover:bg-gray-1"
+                aria-label="Close modal"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -437,9 +451,44 @@ const CouponManager = ({ initialCoupons }: CouponManagerProps) => {
                 </button>
               </div>
             </form>
+            </div>
           </div>
-        </div>,
-        document.body
+        </ModalPortal>
+      )}
+
+      {deleteTarget && (
+        <ModalPortal>
+          <div className="fixed inset-0 left-0 top-0 z-[200] flex min-h-[100dvh] w-full items-center justify-center p-4 font-euclid-circular-a">
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+              onClick={() => setDeleteTarget(null)}
+              aria-label="Close dialog"
+            />
+            <div className="relative z-[1] bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl">
+              <h2 className="text-lg font-bold text-dark mb-2">Confirm Delete</h2>
+              <p className="text-body text-custom-sm mb-4">
+                Are you sure you want to delete coupon <strong>{deleteTarget.code}</strong>? This cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(null)}
+                  className="px-4 py-2 text-custom-sm font-medium text-dark bg-gray-2 rounded-lg hover:bg-gray-3 duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  className="px-4 py-2 text-custom-sm font-medium text-white bg-red rounded-lg hover:bg-red-dark duration-200"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
       )}
     </div>
   );

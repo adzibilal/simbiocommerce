@@ -14,13 +14,28 @@ export async function getCategoryById(id: string) {
   return result[0] || null;
 }
 
-export async function createCategory(data: { name: string; slug: string }) {
-  await db.insert(categories).values(data);
+export async function createCategory(data: {
+  name: string;
+  slug: string;
+  imageUrl?: string | null;
+}) {
+  await db.insert(categories).values({
+    name: data.name,
+    slug: data.slug,
+    imageUrl: data.imageUrl?.trim() ? data.imageUrl.trim() : null,
+  });
   revalidatePath("/admin/categories");
 }
 
-export async function updateCategory(id: string, data: { name?: string; slug?: string }) {
-  await db.update(categories).set(data).where(eq(categories.id, id));
+export async function updateCategory(
+  id: string,
+  data: { name?: string; slug?: string; imageUrl?: string | null }
+) {
+  const patch: { name?: string; slug?: string; imageUrl?: string | null } = { ...data };
+  if (data.imageUrl !== undefined) {
+    patch.imageUrl = data.imageUrl?.trim() ? data.imageUrl.trim() : null;
+  }
+  await db.update(categories).set(patch).where(eq(categories.id, id));
   revalidatePath("/admin/categories");
 }
 

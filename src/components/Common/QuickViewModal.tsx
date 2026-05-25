@@ -9,6 +9,7 @@ import Image from "next/image";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { resetQuickView } from "@/redux/features/quickView-slice";
 import { updateproductDetails } from "@/redux/features/product-details";
+import { formatCurrency } from "@/lib/currency";
 
 const QuickViewModal = () => {
   const { isModalOpen, closeModal } = useModalContext();
@@ -93,7 +94,7 @@ const QuickViewModal = () => {
             <div className="max-w-[526px] w-full">
               <div className="flex gap-5">
                 <div className="flex flex-col gap-5">
-                  {product.imgs.thumbnails?.map((img, key) => (
+                  {(product.imageUrl ? [product.imageUrl] : []).map((img, key) => (
                     <button
                       onClick={() => setActivePreview(key)}
                       key={key}
@@ -135,9 +136,9 @@ const QuickViewModal = () => {
                       </svg>
                     </button>
 
-                    {product?.imgs?.previews?.[activePreview] && (
+                    {product?.imageUrl && (
                       <Image
-                        src={product.imgs.previews[activePreview]}
+                        src={product.imageUrl}
                         alt="products-details"
                         width={400}
                         height={400}
@@ -154,7 +155,7 @@ const QuickViewModal = () => {
               </span>
 
               <h3 className="font-semibold text-xl xl:text-heading-5 text-dark mb-4">
-                {product.title}
+                 {product.name}
               </h3>
 
               <div className="flex flex-wrap items-center gap-5 mb-6">
@@ -315,11 +316,11 @@ const QuickViewModal = () => {
 
                   <span className="flex items-center gap-2">
                     <span className="font-semibold text-dark text-xl xl:text-heading-4">
-                      ${product.discountedPrice}
-                    </span>
-                    <span className="font-medium text-dark-4 text-lg xl:text-2xl line-through">
-                      ${product.price}
-                    </span>
+                        {formatCurrency(product.price)}
+                     </span>
+                     <span className="font-medium text-dark-4 text-lg xl:text-2xl line-through">
+                       {formatCurrency(product.price)}
+                     </span>
                   </span>
                 </div>
 

@@ -6,8 +6,9 @@ import Newsletter from "../Common/Newsletter";
 import RecentlyViewdItems from "./RecentlyViewd";
 import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
 import { useAppSelector } from "@/redux/store";
+import { formatCurrency } from "@/lib/currency";
 
-const ShopDetails = () => {
+const ShopDetails = ({ slug }: { slug?: string }) => {
   const [activeColor, setActiveColor] = useState("blue");
   const { openPreviewModal } = usePreviewSlider();
   const [previewImg, setPreviewImg] = useState(0);
@@ -75,29 +76,60 @@ const ShopDetails = () => {
 
   const colors = ["red", "blue", "orange", "pink", "purple"];
 
-  const alreadyExist = localStorage.getItem("productDetails");
   const productFromStorage = useAppSelector(
     (state) => state.productDetailsReducer.value
   );
-
-  const product = alreadyExist ? JSON.parse(alreadyExist) : productFromStorage;
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem("productDetails", JSON.stringify(product));
-  }, [product]);
+    const fetchProduct = async () => {
+      if (slug) {
+        try {
+          const response = await fetch(`/api/products/${slug}`);
+          if (response.ok) {
+            const data = await response.json();
+            setProduct(data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch product:", error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        const alreadyExist = localStorage.getItem("productDetails");
+        setProduct(alreadyExist ? JSON.parse(alreadyExist) : productFromStorage);
+        setLoading(false);
+      }
+    };
+    fetchProduct();
+  }, [slug]);
 
-  // pass the product here when you get the real data.
   const handlePreviewSlider = () => {
     openPreviewModal();
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-dark-4">Loading product...</div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-dark-4">Product not found</div>
+      </div>
+    );
+  }
 
   return (
     <>
       <Breadcrumb title={"Shop Details"} pages={["shop details"]} />
 
-      {product.title === "" ? (
-        "Please add product"
-      ) : (
+       {product.name ? (
         <>
           <section className="overflow-hidden relative pb-20 pt-5 lg:pt-20 xl:pt-28">
             <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
@@ -127,12 +159,12 @@ const ShopDetails = () => {
                         </svg>
                       </button>
 
-                      {product.imgs?.previews?.[previewImg] && (
+                      {product.imageUrl && (
                         <Image
-                          src={product.imgs.previews[previewImg]}
-                          alt="products-details"
-                          width={400}
-                          height={400}
+                          src={product.imageUrl}
+                          alt="product"
+                          width={500}
+                          height={500}
                         />
                       )}
                     </div>
@@ -140,7 +172,7 @@ const ShopDetails = () => {
 
                   {/* ?  &apos;border-blue &apos; :  &apos;border-transparent&apos; */}
                   <div className="flex flex-wrap sm:flex-nowrap gap-4.5 mt-6">
-                    {product.imgs?.thumbnails.map((item, key) => (
+                    {product.imageUrl ? [product.imageUrl].map((item, key) => (
                       <button
                         onClick={() => setPreviewImg(key)}
                         key={key}
@@ -156,7 +188,7 @@ const ShopDetails = () => {
                           alt="thumbnail"
                         />
                       </button>
-                    ))}
+                    )) : null}
                   </div>
                 </div>
 
@@ -164,7 +196,7 @@ const ShopDetails = () => {
                 <div className="max-w-[539px] w-full">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="font-semibold text-xl sm:text-2xl xl:text-custom-3 text-dark">
-                      {product.title}
+                      {product.name}
                     </h2>
 
                     <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
@@ -316,17 +348,18 @@ const ShopDetails = () => {
 
                   <h3 className="font-medium text-custom-1 mb-4.5">
                     <span className="text-sm sm:text-base text-dark">
-                      Price: ${product.price}
+                      Price: {formatCurrency(product.price)}
                     </span>
                     <span className="line-through">
                       {" "}
-                      ${product.discountedPrice}{" "}
+                      {formatCurrency(product.price)}{" "}
                     </span>
                   </h3>
 
                   <ul className="flex flex-col gap-2">
                     <li className="flex items-center gap-2.5">
                       <svg
+                        className="text-blue"
                         width="20"
                         height="20"
                         viewBox="0 0 20 20"
@@ -335,13 +368,13 @@ const ShopDetails = () => {
                       >
                         <path
                           d="M13.3589 8.35863C13.603 8.11455 13.603 7.71882 13.3589 7.47475C13.1149 7.23067 12.7191 7.23067 12.4751 7.47475L8.75033 11.1995L7.5256 9.97474C7.28152 9.73067 6.8858 9.73067 6.64172 9.97474C6.39764 10.2188 6.39764 10.6146 6.64172 10.8586L8.30838 12.5253C8.55246 12.7694 8.94819 12.7694 9.19227 12.5253L13.3589 8.35863Z"
-                          fill="#3C50E0"
+                          fill="currentColor"
                         />
                         <path
                           fillRule="evenodd"
                           clipRule="evenodd"
                           d="M10.0003 1.04169C5.05277 1.04169 1.04199 5.05247 1.04199 10C1.04199 14.9476 5.05277 18.9584 10.0003 18.9584C14.9479 18.9584 18.9587 14.9476 18.9587 10C18.9587 5.05247 14.9479 1.04169 10.0003 1.04169ZM2.29199 10C2.29199 5.74283 5.74313 2.29169 10.0003 2.29169C14.2575 2.29169 17.7087 5.74283 17.7087 10C17.7087 14.2572 14.2575 17.7084 10.0003 17.7084C5.74313 17.7084 2.29199 14.2572 2.29199 10Z"
-                          fill="#3C50E0"
+                          fill="currentColor"
                         />
                       </svg>
                       Free delivery available
@@ -349,6 +382,7 @@ const ShopDetails = () => {
 
                     <li className="flex items-center gap-2.5">
                       <svg
+                        className="text-blue"
                         width="20"
                         height="20"
                         viewBox="0 0 20 20"
@@ -357,13 +391,13 @@ const ShopDetails = () => {
                       >
                         <path
                           d="M13.3589 8.35863C13.603 8.11455 13.603 7.71882 13.3589 7.47475C13.1149 7.23067 12.7191 7.23067 12.4751 7.47475L8.75033 11.1995L7.5256 9.97474C7.28152 9.73067 6.8858 9.73067 6.64172 9.97474C6.39764 10.2188 6.39764 10.6146 6.64172 10.8586L8.30838 12.5253C8.55246 12.7694 8.94819 12.7694 9.19227 12.5253L13.3589 8.35863Z"
-                          fill="#3C50E0"
+                          fill="currentColor"
                         />
                         <path
                           fillRule="evenodd"
                           clipRule="evenodd"
                           d="M10.0003 1.04169C5.05277 1.04169 1.04199 5.05247 1.04199 10C1.04199 14.9476 5.05277 18.9584 10.0003 18.9584C14.9479 18.9584 18.9587 14.9476 18.9587 10C18.9587 5.05247 14.9479 1.04169 10.0003 1.04169ZM2.29199 10C2.29199 5.74283 5.74313 2.29169 10.0003 2.29169C14.2575 2.29169 17.7087 5.74283 17.7087 10C17.7087 14.2572 14.2575 17.7084 10.0003 17.7084C5.74313 17.7084 2.29199 14.2572 2.29199 10Z"
-                          fill="#3C50E0"
+                          fill="currentColor"
                         />
                       </svg>
                       Sales 30% Off Use Code: PROMO30
@@ -446,6 +480,7 @@ const ShopDetails = () => {
                                     }
                                   >
                                     <svg
+                                      className="text-blue"
                                       width="24"
                                       height="24"
                                       viewBox="0 0 24 24"
@@ -458,7 +493,7 @@ const ShopDetails = () => {
                                         width="16"
                                         height="16"
                                         rx="4"
-                                        fill="#3C50E0"
+                                        fill="currentColor"
                                       />
                                       <path
                                         fillRule="evenodd"
@@ -513,6 +548,7 @@ const ShopDetails = () => {
                                     }
                                   >
                                     <svg
+                                      className="text-blue"
                                       width="24"
                                       height="24"
                                       viewBox="0 0 24 24"
@@ -525,7 +561,7 @@ const ShopDetails = () => {
                                         width="16"
                                         height="16"
                                         rx="4"
-                                        fill="#3C50E0"
+                                        fill="currentColor"
                                       />
                                       <path
                                         fillRule="evenodd"
@@ -580,6 +616,7 @@ const ShopDetails = () => {
                                     }
                                   >
                                     <svg
+                                      className="text-blue"
                                       width="24"
                                       height="24"
                                       viewBox="0 0 24 24"
@@ -592,7 +629,7 @@ const ShopDetails = () => {
                                         width="16"
                                         height="16"
                                         rx="4"
-                                        fill="#3C50E0"
+                                        fill="currentColor"
                                       />
                                       <path
                                         fillRule="evenodd"
@@ -1439,7 +1476,7 @@ const ShopDetails = () => {
 
           <Newsletter />
         </>
-      )}
+      ) : null}
     </>
   );
 };

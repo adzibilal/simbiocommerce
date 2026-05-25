@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { deleteProduct } from "@/app/actions/product";
 import Link from "next/link";
+import { formatCurrency } from "@/lib/currency";
 
 interface Product {
   id: string;
@@ -70,7 +71,7 @@ const ProductTable = ({ products }: { products: Product[] }) => {
                   {product.category || "Uncategorized"}
                 </td>
                 <td className="px-6 py-4 text-custom-sm font-medium text-dark">
-                  {`Rp ${product.price.toLocaleString()}`}
+                  {formatCurrency(product.price)}
                 </td>
                 <td className="px-6 py-4 text-custom-sm text-body">
                   {product.stock}

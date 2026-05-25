@@ -6,15 +6,13 @@ type InitialState = {
 };
 
 type CartItem = {
-  id: number;
-  title: string;
+  id: string;
+  name: string;
   price: number;
-  discountedPrice: number;
   quantity: number;
-  imgs?: {
-    thumbnails: string[];
-    previews: string[];
-  };
+  imageUrl?: string;
+  weight: number;
+  stock: number;
 };
 
 const initialState: InitialState = {
@@ -26,35 +24,38 @@ export const cart = createSlice({
   initialState,
   reducers: {
     addItemToCart: (state, action: PayloadAction<CartItem>) => {
-      const { id, title, price, quantity, discountedPrice, imgs } =
+      const { id, name, price, quantity, imageUrl, weight, stock } =
         action.payload;
       const existingItem = state.items.find((item) => item.id === id);
 
       if (existingItem) {
-        existingItem.quantity += quantity;
+        if (existingItem.quantity + quantity <= stock) {
+          existingItem.quantity += quantity;
+        }
       } else {
         state.items.push({
           id,
-          title,
+          name,
           price,
           quantity,
-          discountedPrice,
-          imgs,
+          imageUrl,
+          weight,
+          stock,
         });
       }
     },
-    removeItemFromCart: (state, action: PayloadAction<number>) => {
+    removeItemFromCart: (state, action: PayloadAction<string>) => {
       const itemId = action.payload;
       state.items = state.items.filter((item) => item.id !== itemId);
     },
     updateCartItemQuantity: (
       state,
-      action: PayloadAction<{ id: number; quantity: number }>
+      action: PayloadAction<{ id: string; quantity: number }>
     ) => {
       const { id, quantity } = action.payload;
       const existingItem = state.items.find((item) => item.id === id);
 
-      if (existingItem) {
+      if (existingItem && quantity <= existingItem.stock) {
         existingItem.quantity = quantity;
       }
     },
@@ -69,7 +70,13 @@ export const selectCartItems = (state: RootState) => state.cartReducer.items;
 
 export const selectTotalPrice = createSelector([selectCartItems], (items) => {
   return items.reduce((total, item) => {
-    return total + item.discountedPrice * item.quantity;
+    return total + item.price * item.quantity;
+  }, 0);
+});
+
+export const selectTotalWeight = createSelector([selectCartItems], (items) => {
+  return items.reduce((total, item) => {
+    return total + item.weight * item.quantity;
   }, 0);
 });
 

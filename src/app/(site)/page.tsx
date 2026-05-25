@@ -1,11 +1,13 @@
 import Home from "@/components/Home";
-import { Metadata } from "next";
+import { generatePageMetadata } from "@/lib/metadata";
+import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "NextCommerce | Nextjs E-commerce template",
-  description: "This is Home for NextCommerce Template",
-  // other metadata
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata("/", {
+    title: "Home | SimbioCommerce",
+    description: "Shop the best products online at SimbioCommerce.",
+  });
+}
 
 export default function HomePage() {
   return (

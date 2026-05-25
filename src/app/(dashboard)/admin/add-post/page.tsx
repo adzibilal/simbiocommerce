@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Add Post" };
+
 import React from "react";
 import { getPostCategories } from "@/app/actions/post-category";
 import PostForm from "@/components/Dashboard/PostForm";

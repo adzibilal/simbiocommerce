@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Blog Posts" };
+
 import React from "react";
 import Link from "next/link";
 import { getPosts } from "@/app/actions/post";

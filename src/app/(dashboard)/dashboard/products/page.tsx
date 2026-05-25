@@ -1,7 +1,10 @@
 import React from "react";
 import ProductTable from "@/components/Dashboard/ProductTable";
+import { getProducts } from "@/app/actions/product";
 
-const ProductsPage = () => {
+const ProductsPage = async () => {
+  const products = await getProducts();
+
   return (
     <div className="space-y-6 font-euclid-circular-a">
       <div className="flex items-center justify-between">
@@ -31,7 +34,7 @@ const ProductsPage = () => {
       </div>
 
       {/* Product Table */}
-      <ProductTable />
+      <ProductTable products={products} />
     </div>
   );
 };

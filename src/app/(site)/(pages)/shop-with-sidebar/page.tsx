@@ -1,17 +1,22 @@
 import React from "react";
 import ShopWithSidebar from "@/components/ShopWithSidebar";
+import { getProducts } from "@/app/actions/product";
+import { generatePageMetadata } from "@/lib/metadata";
+import type { Metadata } from "next";
 
-import { Metadata } from "next";
-export const metadata: Metadata = {
-  title: "Shop Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Shop Page for NextCommerce Template",
-  // other metadata
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata("/shop-with-sidebar", {
+    title: "Shop | SimbioCommerce",
+    description: "Browse our full product catalog.",
+  });
+}
 
-const ShopWithSidebarPage = () => {
+const ShopWithSidebarPage = async () => {
+  const products = await getProducts();
+
   return (
     <main>
-      <ShopWithSidebar />
+      <ShopWithSidebar products={products} />
     </main>
   );
 };

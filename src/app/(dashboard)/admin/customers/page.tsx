@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Customers" };
+
 import React from "react";
 import { getCustomers } from "@/app/actions/customer";
 

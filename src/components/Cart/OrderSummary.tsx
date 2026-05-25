@@ -2,6 +2,7 @@ import { selectTotalPrice } from "@/redux/features/cart-slice";
 import { useAppSelector } from "@/redux/store";
 import React from "react";
 import { useSelector } from "react-redux";
+import { formatCurrency } from "@/lib/currency";
 
 const OrderSummary = () => {
   const cartItems = useAppSelector((state) => state.cartReducer.items);
@@ -30,12 +31,12 @@ const OrderSummary = () => {
           {cartItems.map((item, key) => (
             <div key={key} className="flex items-center justify-between py-5 border-b border-gray-3">
               <div>
-                <p className="text-dark">{item.title}</p>
+                 <p className="text-dark">{item.name}</p>
               </div>
               <div>
-                <p className="text-dark text-right">
-                  ${item.discountedPrice * item.quantity}
-                </p>
+                  <p className="text-dark text-right">
+                   {formatCurrency(item.price * item.quantity)}
+                 </p>
               </div>
             </div>
           ))}
@@ -46,9 +47,9 @@ const OrderSummary = () => {
               <p className="font-medium text-lg text-dark">Total</p>
             </div>
             <div>
-              <p className="font-medium text-lg text-dark text-right">
-                ${totalPrice}
-              </p>
+                  <p className="font-medium text-lg text-dark text-right">
+                 {formatCurrency(totalPrice)}
+               </p>
             </div>
           </div>
 

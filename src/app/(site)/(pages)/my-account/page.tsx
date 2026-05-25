@@ -1,12 +1,14 @@
 import MyAccount from "@/components/MyAccount";
 import React from "react";
+import { generatePageMetadata } from "@/lib/metadata";
+import type { Metadata } from "next";
 
-import { Metadata } from "next";
-export const metadata: Metadata = {
-  title: "My Account | NextCommerce Nextjs E-commerce template",
-  description: "This is My Account page for NextCommerce Template",
-  // other metadata
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata("/my-account", {
+    title: "My Account | SimbioCommerce",
+    description: "Manage your account and orders.",
+  });
+}
 
 const MyAccountPage = () => {
   return (

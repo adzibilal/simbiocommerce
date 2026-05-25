@@ -1,12 +1,14 @@
 import Signup from "@/components/Auth/Signup";
 import React from "react";
+import { generatePageMetadata } from "@/lib/metadata";
+import type { Metadata } from "next";
 
-import { Metadata } from "next";
-export const metadata: Metadata = {
-  title: "Signup Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Signup Page for NextCommerce Template",
-  // other metadata
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata("/signup", {
+    title: "Sign Up | SimbioCommerce",
+    description: "Create a new account.",
+  });
+}
 
 const SignupPage = () => {
   return (

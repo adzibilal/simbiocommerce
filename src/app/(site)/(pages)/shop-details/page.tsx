@@ -1,12 +1,14 @@
 import React from "react";
 import ShopDetails from "@/components/ShopDetails";
-import { Metadata } from "next";
+import { generatePageMetadata } from "@/lib/metadata";
+import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Shop Details Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Shop Details Page for NextCommerce Template",
-  // other metadata
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata("/shop-details", {
+    title: "Product Details | SimbioCommerce",
+    description: "View product details, specifications, and reviews.",
+  });
+}
 
 const ShopDetailsPage = () => {
   return (

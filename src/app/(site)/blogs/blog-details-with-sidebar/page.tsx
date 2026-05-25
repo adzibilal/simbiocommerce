@@ -1,12 +1,14 @@
 import React from "react";
 import BlogDetailsWithSidebar from "@/components/BlogDetailsWithSidebar";
+import { generatePageMetadata } from "@/lib/metadata";
+import type { Metadata } from "next";
 
-import { Metadata } from "next";
-export const metadata: Metadata = {
-  title: "Blog Details Page | NextCommerce Nextjs E-commerce template",
-  description: "This is Blog Details Page for NextCommerce Template",
-  // other metadata
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata("/blogs", {
+    title: "Blog | SimbioCommerce",
+    description: "Read our latest articles.",
+  });
+}
 
 const BlogDetailsWithSidebarPage = () => {
   return (
