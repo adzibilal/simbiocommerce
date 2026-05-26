@@ -31,30 +31,20 @@
 - Email notifications via Resend (order confirmation, status update, admin notif, payment proof)
 - Coupon discount tersimpan di order & tampil di detail + email
 - Balas pesan contact form dari admin (reply ke email pengirim)
+- Transaction safety: createOrder atomic + rollback + race condition stock
+- Input validation & sanitasi dengan Zod (createOrder, updateProfile, register, contact, review)
+- Analytics: grafik penjualan 30 hari, produk terlaris, revenue summary, customer new vs returning, export CSV
 
 ---
 
 ## 🔴 Prioritas Tinggi
 
-### Transaction Safety pada Order
-- [ ] Wrap `createOrder()` dalam database transaction
-- [ ] Rollback stock jika payment/insert gagal di tengah jalan
-- [ ] Handle race condition: 2 user beli produk stock terakhir bersamaan
 
-### Input Validation
-- [ ] Install Zod dan buat schema untuk checkout form
-- [ ] Validasi server actions (createOrder, updateProfile, dll)
-- [ ] Sanitasi input pada form kontak dan review
 
 ---
 
 ## 🟡 Prioritas Medium
 
-### Analytics & Reporting
-- [ ] Grafik penjualan per hari/minggu/bulan di dashboard admin
-- [ ] Laporan produk terlaris
-- [ ] Laporan pendapatan dengan export CSV
-- [ ] Customer analytics (new vs returning)
 
 ### Inventory Management
 - [ ] Alert low stock (notifikasi admin jika stok < threshold)

@@ -2,13 +2,14 @@
 
 import { db } from "@/db";
 import { orders, users, orderItems as orderItemsTable, products, payments, shipping, productImages } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import * as crypto from "crypto";
 import { createPaymentToken, getTransactionStatus } from "./payment";
 import { sendOrderConfirmation, sendNewOrderNotification, sendOrderStatusUpdate, sendPaymentProofNotification } from "@/lib/email";
 import { getStoreInfo } from "./store-info";
+import { parseSchema, createOrderSchema } from "@/lib/validation";
 
 export async function getOrders() {
   return await db
@@ -226,77 +227,86 @@ export async function createOrder(
     couponDiscount?: number;
   }
 ) {
-  try {
-    // Validasi stock untuk semua produk
-    for (const item of orderData.items) {
-      const product = await db.select().from(products).where(eq(products.id, item.productId));
-      if (!product[0]) {
-        return { success: false, error: `Product ${item.productId} not found` };
-      }
-      if (product[0].stock < item.quantity) {
-        return { success: false, error: `Insufficient stock for product ${product[0].name}` };
-      }
-    }
+  const validation = parseSchema(createOrderSchema, orderData);
+  if (!validation.success) return { success: false, error: validation.error };
 
-    // Hitung total
+  try {
+    // Hitung total di luar transaksi (tidak butuh lock)
     const totalProductPrice = orderData.items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
     const couponDiscount = orderData.couponDiscount ?? 0;
     const grandTotal = totalProductPrice + orderData.shippingData.shippingCost - couponDiscount;
-
-    // Create order
     const orderId = crypto.randomUUID();
-    await db.insert(orders).values({
-      id: orderId,
-      userId: orderData.userId,
-      orderDate: new Date().toISOString(),
-      totalProductPrice,
-      totalShippingCost: orderData.shippingData.shippingCost,
-      couponDiscount,
-      grandTotal,
-      orderStatus: "pending",
-    });
 
-    // Create order items dan update stock
-    for (const item of orderData.items) {
-      const itemId = crypto.randomUUID();
-      await db.insert(orderItemsTable).values({
-        id: itemId,
+    // Semua operasi DB dalam satu transaksi — auto rollback jika ada yang gagal
+    db.transaction((tx) => {
+      // Validasi & deduct stock secara atomik untuk mencegah race condition
+      for (const item of orderData.items) {
+        const product = tx.select({ id: products.id, name: products.name, stock: products.stock })
+          .from(products)
+          .where(eq(products.id, item.productId))
+          .get();
+
+        if (!product) throw new Error(`Produk tidak ditemukan`);
+        if (product.stock < item.quantity) {
+          throw new Error(`Stok ${product.name} tidak cukup (tersisa ${product.stock})`);
+        }
+
+        // Atomic decrement: hanya berhasil jika stock masih >= quantity saat update
+        tx.update(products)
+          .set({ stock: sql`stock - ${item.quantity}` })
+          .where(and(eq(products.id, item.productId), gte(products.stock, item.quantity)))
+          .run();
+
+        // Verifikasi update berhasil (guard tambahan)
+        const updated = tx.select({ stock: products.stock }).from(products).where(eq(products.id, item.productId)).get();
+        if (!updated || updated.stock < 0) throw new Error(`Stok ${product.name} habis`);
+      }
+
+      // Insert order
+      tx.insert(orders).values({
+        id: orderId,
+        userId: orderData.userId,
+        orderDate: new Date().toISOString(),
+        totalProductPrice,
+        totalShippingCost: orderData.shippingData.shippingCost,
+        couponDiscount,
+        grandTotal,
+        orderStatus: "pending",
+      }).run();
+
+      // Insert order items
+      for (const item of orderData.items) {
+        tx.insert(orderItemsTable).values({
+          id: crypto.randomUUID(),
+          orderId,
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          subtotalWeight: item.weight * item.quantity,
+        }).run();
+      }
+
+      // Insert payment record
+      tx.insert(payments).values({
+        id: crypto.randomUUID(),
         orderId,
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        subtotalWeight: item.weight * item.quantity,
-      });
+        paymentMethod: orderData.paymentData.paymentMethod,
+        paymentAmount: orderData.paymentData.paymentAmount,
+        paymentStatus: "pending",
+      }).run();
 
-      // Update stock
-      const product = await db.select().from(products).where(eq(products.id, item.productId));
-      await db.update(products)
-        .set({ stock: product[0].stock - item.quantity })
-        .where(eq(products.id, item.productId));
-    }
-
-    // Create payment record
-    const paymentId = crypto.randomUUID();
-    await db.insert(payments).values({
-      id: paymentId,
-      orderId,
-      paymentMethod: orderData.paymentData.paymentMethod,
-      paymentAmount: orderData.paymentData.paymentAmount,
-      paymentStatus: "pending",
-    });
-
-    // Create shipping record
-    const shippingId = crypto.randomUUID();
-    await db.insert(shipping).values({
-      id: shippingId,
-      orderId,
-      destinationProvinceId: orderData.shippingData.destinationProvinceId,
-      destinationCityId: orderData.shippingData.destinationCityId,
-      courierCode: orderData.shippingData.courierCode,
-      courierService: orderData.shippingData.courierService,
-      totalWeight: orderData.shippingData.totalWeight,
-      shippingCost: orderData.shippingData.shippingCost,
-      shippingStatus: "pending",
+      // Insert shipping record
+      tx.insert(shipping).values({
+        id: crypto.randomUUID(),
+        orderId,
+        destinationProvinceId: orderData.shippingData.destinationProvinceId,
+        destinationCityId: orderData.shippingData.destinationCityId,
+        courierCode: orderData.shippingData.courierCode,
+        courierService: orderData.shippingData.courierService,
+        totalWeight: orderData.shippingData.totalWeight,
+        shippingCost: orderData.shippingData.shippingCost,
+        shippingStatus: "pending",
+      }).run();
     });
 
     revalidatePath("/admin/orders");

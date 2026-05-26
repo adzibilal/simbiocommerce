@@ -128,15 +128,7 @@ const DashboardHome = () => {
                 >
                   <div className="flex items-center space-x-3">
                     <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-dark-5 border border-gray-3 overflow-hidden">
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        "📦"
-                      )}
+                      📦
                     </div>
                     <div>
                       <span className="text-custom-sm font-medium text-dark">

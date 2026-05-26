@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { reviews, products, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { parseSchema, submitReviewSchema } from "@/lib/validation";
 
 export async function getReviews() {
   return await db
@@ -56,6 +57,9 @@ export async function submitReview(data: {
   comment: string;
   imageUrl?: string;
 }) {
+  const validation = parseSchema(submitReviewSchema, data);
+  if (!validation.success) return { success: false, error: validation.error };
+
   // Prevent duplicate reviews for same product+order+customer
   const existing = await db
     .select({ id: reviews.id })

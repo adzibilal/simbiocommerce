@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { contactMessages } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { parseSchema, contactSchema } from "@/lib/validation";
 
 export async function submitContact(data: {
   firstName: string;
@@ -13,8 +14,11 @@ export async function submitContact(data: {
   subject?: string;
   message: string;
 }) {
+  const validation = parseSchema(contactSchema, data);
+  if (!validation.success) return { success: false, error: validation.error };
+
   try {
-    await db.insert(contactMessages).values(data);
+    await db.insert(contactMessages).values(validation.data);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to send message" };

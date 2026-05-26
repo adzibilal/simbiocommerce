@@ -5,6 +5,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcrypt";
+import { parseSchema, updateProfileSchema, registerSchema } from "@/lib/validation";
 
 export async function getUserById(id: string) {
   const result = await db
@@ -22,9 +23,12 @@ export async function updateUserProfile(userId: string, data: {
   postalCode?: string;
   image?: string;
 }) {
+  const validation = parseSchema(updateProfileSchema, data);
+  if (!validation.success) return { success: false, error: validation.error };
+
   try {
     await db.update(users)
-      .set(data)
+      .set(validation.data)
       .where(eq(users.id, userId));
       
     revalidatePath("/admin/profile");
@@ -40,19 +44,22 @@ export async function registerUser(data: {
   email: string;
   password: string;
 }) {
+  const validation = parseSchema(registerSchema, data);
+  if (!validation.success) return { success: false, error: validation.error };
+
   try {
-    const existingUser = await db.select().from(users).where(eq(users.email, data.email));
+    const existingUser = await db.select().from(users).where(eq(users.email, validation.data.email));
     
     if (existingUser.length > 0) {
       return { success: false, error: "Email already registered" };
     }
     
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    
+    const hashedPassword = await bcrypt.hash(validation.data.password, 10);
+
     await db.insert(users).values({
       id: crypto.randomUUID(),
-      name: data.name,
-      email: data.email,
+      name: validation.data.name,
+      email: validation.data.email,
       password: hashedPassword,
       role: "customer",
     });

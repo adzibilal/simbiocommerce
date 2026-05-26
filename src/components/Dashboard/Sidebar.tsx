@@ -71,6 +71,19 @@ const Sidebar = ({ storeInfo }: { storeInfo: StoreInfo | null }) => {
               </Link>
             </div>
 
+            {/* Analytics */}
+            <div className="flex flex-col gap-1">
+              <Link
+                className={`flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent ${pathname === "/admin/analytics" ? "bg-blue/10 text-blue" : ""}`}
+                href="/admin/analytics"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+                </svg>
+                Analytics
+              </Link>
+            </div>
+
             {/* Customers */}
             <div className="flex flex-col gap-1">
               <Link 

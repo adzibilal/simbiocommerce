@@ -79,7 +79,6 @@ export async function getTopProducts(limit: number = 5) {
         name: products.name,
         price: products.price,
         stock: products.stock,
-        imageUrl: products.imageUrl,
       })
       .from(products)
       .orderBy(sql`${products.stock} DESC`)
