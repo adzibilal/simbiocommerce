@@ -513,3 +513,61 @@ export async function getStoreSettingsOverview(): Promise<StoreSettingsOverview>
     };
   }
 }
+
+const EMAIL_SETTINGS_KEY = "email_settings";
+
+export interface EmailSettings {
+  resendApiKey: string;
+  fromEmail: string;
+  fromName: string;
+  enabled: boolean;
+}
+
+export async function getEmailSettings(): Promise<EmailSettings | null> {
+  try {
+    const result = await db
+      .select()
+      .from(storeSettings)
+      .where(eq(storeSettings.key, EMAIL_SETTINGS_KEY))
+      .limit(1);
+    if (result.length === 0) return null;
+    const decrypted = decrypt(result[0].value);
+    return JSON.parse(decrypted) as EmailSettings;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveEmailSettings(
+  data: EmailSettings,
+  userId?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const encryptedValue = encrypt(JSON.stringify(data));
+    const existing = await db
+      .select()
+      .from(storeSettings)
+      .where(eq(storeSettings.key, EMAIL_SETTINGS_KEY))
+      .limit(1);
+
+    if (existing.length > 0) {
+      await db
+        .update(storeSettings)
+        .set({ value: encryptedValue, updatedAt: new Date().toISOString(), updatedBy: userId })
+        .where(eq(storeSettings.key, EMAIL_SETTINGS_KEY));
+    } else {
+      await db.insert(storeSettings).values({
+        id: crypto.randomUUID(),
+        key: EMAIL_SETTINGS_KEY,
+        value: encryptedValue,
+        updatedAt: new Date().toISOString(),
+        updatedBy: userId,
+      });
+    }
+
+    await createAuditLog({ settingKey: EMAIL_SETTINGS_KEY, action: existing.length > 0 ? "updated" : "created", changedBy: userId });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

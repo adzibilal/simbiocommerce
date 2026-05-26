@@ -1,9 +1,12 @@
-import { getStoreSettingsOverview } from "@/app/actions/store-settings";
+import { getStoreSettingsOverview, getEmailSettings } from "@/app/actions/store-settings";
 import SettingsCard from "@/components/Admin/SettingsCard";
 import AuditLogTable from "@/components/Admin/AuditLogTable";
 
 export default async function StoreSettingsPage() {
-  const overview = await getStoreSettingsOverview();
+  const [overview, emailSettings] = await Promise.all([
+    getStoreSettingsOverview(),
+    getEmailSettings(),
+  ]);
 
   const paymentStatus = overview.payment.configured
     ? overview.payment.isProduction
@@ -22,7 +25,7 @@ export default async function StoreSettingsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <SettingsCard
           title="Payment Settings"
           description="Midtrans Payment Gateway"
@@ -66,6 +69,23 @@ export default async function StoreSettingsPage() {
               label: "Account Type",
               value: overview.shipping.accountType || "N/A",
             },
+          ]}
+        />
+      </div>
+
+        <SettingsCard
+          title="Email Settings"
+          description="Resend Email Notifications"
+          icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+          }
+          href="/admin/store-settings/email"
+          status={emailSettings?.enabled ? "active" : emailSettings ? "inactive" : "not-configured"}
+          stats={[
+            { label: "Status", value: emailSettings?.enabled ? "Aktif" : emailSettings ? "Dinonaktifkan" : "Belum dikonfigurasi" },
           ]}
         />
       </div>

@@ -1,5 +1,5 @@
-import { getContactMessages, markContactRead, deleteContactMessage } from "@/app/actions/contact";
-import { revalidatePath } from "next/cache";
+import { getContactMessages } from "@/app/actions/contact";
+import ContactActions from "./ContactActions";
 
 export const metadata = {
   title: "Contact Messages | Admin",
@@ -65,41 +65,14 @@ export default async function ContactMessagesPage() {
                       {msg.createdAt ? new Date(msg.createdAt).toLocaleDateString("id-ID") : "-"}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        {msg.status === "unread" && (
-                          <form action={async () => {
-                            "use server";
-                            await markContactRead(msg.id);
-                          }}>
-                            <button
-                              type="submit"
-                              title="Mark as read"
-                              className="p-1.5 rounded hover:bg-blue/10 text-blue transition-colors"
-                            >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            </button>
-                          </form>
-                        )}
-                        <form action={async () => {
-                          "use server";
-                          await deleteContactMessage(msg.id);
-                        }}>
-                          <button
-                            type="submit"
-                            title="Delete"
-                            className="p-1.5 rounded hover:bg-red/10 text-red transition-colors"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6l-1 14H6L5 6" />
-                              <path d="M10 11v6M14 11v6" />
-                              <path d="M9 6V4h6v2" />
-                            </svg>
-                          </button>
-                        </form>
-                      </div>
+                      <ContactActions msg={{
+                        id: msg.id,
+                        firstName: msg.firstName,
+                        lastName: msg.lastName,
+                        email: msg.email,
+                        message: msg.message,
+                        status: msg.status,
+                      }} />
                     </td>
                   </tr>
                 ))}

@@ -50,6 +50,7 @@ export const orders = sqliteTable('orders', {
   orderDate: text('order_date').$defaultFn(() => new Date().toISOString()),
   totalProductPrice: integer('total_product_price').notNull(),
   totalShippingCost: integer('total_shipping_cost').notNull(),
+  couponDiscount: integer('coupon_discount').notNull().default(0),
   grandTotal: integer('grand_total').notNull(),
   orderStatus: text('order_status').default('pending'),
 });

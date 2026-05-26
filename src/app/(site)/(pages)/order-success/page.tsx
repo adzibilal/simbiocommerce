@@ -132,6 +132,12 @@ export default async function OrderSuccessPage({
               <span>Ongkos Kirim</span>
               <span>{formatCurrency(order.totalShippingCost)}</span>
             </div>
+            {(order.couponDiscount ?? 0) > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Diskon Kupon</span>
+                <span>- {formatCurrency(order.couponDiscount ?? 0)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-semibold text-dark text-base pt-1 border-t border-gray-2">
               <span>Total</span>
               <span>{formatCurrency(order.grandTotal)}</span>

@@ -172,6 +172,7 @@ const Checkout = ({ paymentSettings, originCityId, userProfile }: Props) => {
         },
         shippingAddress: `${billing.address}, ${destination!.subdistrict_name}, ${destination!.district_name}, ${destination!.city_name}, ${destination!.province_name} ${destination!.zip_code}`,
         notes,
+        couponDiscount,
       });
 
       if (!result.success) {
@@ -188,8 +189,9 @@ const Checkout = ({ paymentSettings, originCityId, userProfile }: Props) => {
           onClose: () => setIsSubmitting(false),
         });
       } else {
+        const orderId = (result as any).orderId as string;
         dispatch(removeAllItemsFromCart());
-        router.push(`/order-success?orderId=${result.orderId}`);
+        router.push(`/order-success?orderId=${orderId}`);
       }
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan");

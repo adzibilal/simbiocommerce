@@ -1,11 +1,14 @@
 "use server";
 
 import { db } from "@/db";
-import { orders, users, orderItems, products, payments, shipping, productImages } from "@/db/schema";
+import { orders, users, orderItems as orderItemsTable, products, payments, shipping, productImages } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import * as crypto from "crypto";
 import { createPaymentToken, getTransactionStatus } from "./payment";
+import { sendOrderConfirmation, sendNewOrderNotification, sendOrderStatusUpdate, sendPaymentProofNotification } from "@/lib/email";
+import { getStoreInfo } from "./store-info";
 
 export async function getOrders() {
   return await db
@@ -43,15 +46,15 @@ export async function getOrdersByUser(userId: string) {
 export async function getOrderItems(orderId: string) {
   return await db
     .select({
-      id: orderItems.id,
-      quantity: orderItems.quantity,
-      unitPrice: orderItems.unitPrice,
+      id: orderItemsTable.id,
+      quantity: orderItemsTable.quantity,
+      unitPrice: orderItemsTable.unitPrice,
       productName: products.name,
       productSlug: products.slug,
     })
-    .from(orderItems)
-    .leftJoin(products, eq(products.id, orderItems.productId))
-    .where(eq(orderItems.orderId, orderId));
+    .from(orderItemsTable)
+    .leftJoin(products, eq(products.id, orderItemsTable.productId))
+    .where(eq(orderItemsTable.orderId, orderId));
 }
 
 export async function getOrderDetail(orderId: string) {
@@ -61,6 +64,7 @@ export async function getOrderDetail(orderId: string) {
       date: orders.orderDate,
       totalProductPrice: orders.totalProductPrice,
       totalShippingCost: orders.totalShippingCost,
+      couponDiscount: orders.couponDiscount,
       grandTotal: orders.grandTotal,
       orderStatus: orders.orderStatus,
       courierCode: shipping.courierCode,
@@ -81,16 +85,16 @@ export async function getOrderDetail(orderId: string) {
 
   const items = await db
     .select({
-      productId: orderItems.productId,
-      quantity: orderItems.quantity,
-      unitPrice: orderItems.unitPrice,
+      productId: orderItemsTable.productId,
+      quantity: orderItemsTable.quantity,
+      unitPrice: orderItemsTable.unitPrice,
       productName: products.name,
       imageUrl: productImages.imageUrl,
     })
-    .from(orderItems)
-    .leftJoin(products, eq(products.id, orderItems.productId))
+    .from(orderItemsTable)
+    .leftJoin(products, eq(products.id, orderItemsTable.productId))
     .leftJoin(productImages, and(eq(productImages.productId, products.id), eq(productImages.isPrimary, true)))
-    .where(eq(orderItems.orderId, orderId));
+    .where(eq(orderItemsTable.orderId, orderId));
 
   return { ...order[0], items };
 }
@@ -98,6 +102,30 @@ export async function getOrderDetail(orderId: string) {
 export async function updateOrderStatus(id: string, status: string) {
   await db.update(orders).set({ orderStatus: status }).where(eq(orders.id, id));
   revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${id}`);
+
+  // Notify customer
+  try {
+    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const orderUser = await db
+      .select({ email: users.email, name: users.name })
+      .from(orders)
+      .leftJoin(users, eq(users.id, orders.userId))
+      .where(eq(orders.id, id))
+      .limit(1);
+    const shippingRow = await db.select({ trackingNumber: shipping.trackingNumber, courierCode: shipping.courierCode }).from(shipping).where(eq(shipping.orderId, id)).limit(1);
+    if (orderUser[0]?.email) {
+      sendOrderStatusUpdate({
+        to: orderUser[0].email,
+        customerName: orderUser[0].name ?? "Customer",
+        orderId: id,
+        newStatus: status,
+        trackingNumber: shippingRow[0]?.trackingNumber,
+        courierCode: shippingRow[0]?.courierCode,
+        orderUrl: `${baseUrl}/order-success?orderId=${id}`,
+      }).catch(console.error);
+    }
+  } catch {}
 }
 
 export async function submitPaymentProof(orderId: string, proofUrl: string) {
@@ -106,6 +134,29 @@ export async function submitPaymentProof(orderId: string, proofUrl: string) {
     .where(eq(payments.orderId, orderId));
   revalidatePath(`/order-success`);
   revalidatePath(`/admin/orders/${orderId}`);
+
+  // Notify admin
+  try {
+    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const storeData = await getStoreInfo();
+    if (storeData?.email) {
+      const orderRow = await db
+        .select({ grandTotal: orders.grandTotal })
+        .from(orders).where(eq(orders.id, orderId)).limit(1);
+      const orderUser = await db
+        .select({ name: users.name })
+        .from(orders)
+        .leftJoin(users, eq(users.id, orders.userId))
+        .where(eq(orders.id, orderId)).limit(1);
+      sendPaymentProofNotification({
+        adminEmail: storeData.email,
+        orderId,
+        customerName: orderUser[0]?.name ?? "Customer",
+        grandTotal: orderRow[0]?.grandTotal ?? 0,
+        adminOrderUrl: `${baseUrl}/admin/orders/${orderId}`,
+      }).catch(console.error);
+    }
+  } catch {}
 }
 
 export async function updateTrackingNumber(orderId: string, trackingNumber: string) {
@@ -117,6 +168,29 @@ export async function updateTrackingNumber(orderId: string, trackingNumber: stri
     .where(eq(orders.id, orderId));
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/orders");
+
+  // Notify customer of shipment
+  try {
+    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const orderUser = await db
+      .select({ email: users.email, name: users.name })
+      .from(orders)
+      .leftJoin(users, eq(users.id, orders.userId))
+      .where(eq(orders.id, orderId))
+      .limit(1);
+    const courierRow = await db.select({ courierCode: shipping.courierCode }).from(shipping).where(eq(shipping.orderId, orderId)).limit(1);
+    if (orderUser[0]?.email) {
+      sendOrderStatusUpdate({
+        to: orderUser[0].email,
+        customerName: orderUser[0].name ?? "Customer",
+        orderId,
+        newStatus: "shipped",
+        trackingNumber,
+        courierCode: courierRow[0]?.courierCode,
+        orderUrl: `${baseUrl}/order-success?orderId=${orderId}`,
+      }).catch(console.error);
+    }
+  } catch {}
 }
 
 export async function createOrder(
@@ -149,6 +223,7 @@ export async function createOrder(
     billingAddress?: string;
     shippingAddress?: string;
     notes?: string;
+    couponDiscount?: number;
   }
 ) {
   try {
@@ -165,7 +240,8 @@ export async function createOrder(
 
     // Hitung total
     const totalProductPrice = orderData.items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
-    const grandTotal = totalProductPrice + orderData.shippingData.shippingCost;
+    const couponDiscount = orderData.couponDiscount ?? 0;
+    const grandTotal = totalProductPrice + orderData.shippingData.shippingCost - couponDiscount;
 
     // Create order
     const orderId = crypto.randomUUID();
@@ -175,6 +251,7 @@ export async function createOrder(
       orderDate: new Date().toISOString(),
       totalProductPrice,
       totalShippingCost: orderData.shippingData.shippingCost,
+      couponDiscount,
       grandTotal,
       orderStatus: "pending",
     });
@@ -182,7 +259,7 @@ export async function createOrder(
     // Create order items dan update stock
     for (const item of orderData.items) {
       const itemId = crypto.randomUUID();
-      await db.insert(orderItems).values({
+      await db.insert(orderItemsTable).values({
         id: itemId,
         orderId,
         productId: item.productId,
@@ -225,6 +302,51 @@ export async function createOrder(
     revalidatePath("/admin/orders");
 
     const paymentMethod = orderData.paymentData.paymentMethod;
+
+    // Send emails after response using after() to ensure they complete
+    const emailOrderId = orderId;
+    const emailCustomer = orderData.customerDetails;
+    const emailShipping = orderData.shippingData;
+    after(async () => {
+      try {
+        console.log("[order] sending emails for order", emailOrderId);
+        const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+        const storeData = await getStoreInfo();
+        const emailItems = await db
+          .select({ name: products.name, quantity: orderItemsTable.quantity, unitPrice: orderItemsTable.unitPrice })
+          .from(orderItemsTable)
+          .leftJoin(products, eq(products.id, orderItemsTable.productId))
+          .where(eq(orderItemsTable.orderId, emailOrderId));
+
+        await sendOrderConfirmation({
+          to: emailCustomer.email,
+          customerName: `${emailCustomer.firstName} ${emailCustomer.lastName ?? ""}`.trim(),
+          orderId: emailOrderId,
+          items: emailItems.map((i) => ({ name: i.name ?? "", qty: i.quantity, price: i.unitPrice })),
+          subtotal: totalProductPrice,
+          shippingCost: emailShipping.shippingCost,
+          couponDiscount,
+          grandTotal,
+          paymentMethod,
+          courierCode: emailShipping.courierCode,
+          courierService: emailShipping.courierService,
+          orderUrl: `${baseUrl}/order-success?orderId=${emailOrderId}`,
+        });
+
+        if (storeData?.email) {
+          await sendNewOrderNotification({
+            adminEmail: storeData.email,
+            orderId: emailOrderId,
+            customerName: `${emailCustomer.firstName} ${emailCustomer.lastName ?? ""}`.trim(),
+            grandTotal,
+            paymentMethod,
+            adminOrderUrl: `${baseUrl}/admin/orders/${emailOrderId}`,
+          });
+        }
+      } catch (err) {
+        console.error("[order] email error:", err);
+      }
+    });
 
     // For COD and bank transfer, no payment gateway token needed
     if (paymentMethod === "cod" || paymentMethod === "bank_transfer") {

@@ -67,8 +67,11 @@ const ShippingMethod = ({ originCity, destinationCity, weight = 1000, onShipping
       setLoading(false);
     };
 
-    fetchShippingCosts();
-  }, [destinationCity, weight, originCity]);
+    // Debounce to avoid firing multiple times on rapid re-renders
+    const timer = setTimeout(fetchShippingCosts, 300);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destinationCity, originCity]);
 
   const handleSelectShipping = (option: any) => {
     const key = `${option.courier}-${option.service}`;

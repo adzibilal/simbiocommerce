@@ -1,88 +1,124 @@
-# TODO - Perbaikan E-commerce Simbiocommerce
+# TODO - Simbiocommerce Development
 
-## Prioritas Tinggi (Harus diperbaiki dulu)
+## ✅ Sudah Selesai
+- Product catalog terhubung ke database
+- Cart dengan Redux + persist (localStorage)
+- Checkout flow lengkap (billing, shipping, payment method)
+- Order creation dengan stock deduction
+- Midtrans payment gateway (Snap)
+- Bank Transfer + COD payment method
+- Payment proof upload (ImageKit)
+- RajaOngkir shipping cost calculation
+- Tracking number management
+- Admin dashboard 39+ halaman
+- Order management (status, resi, detail)
+- Product reviews dengan moderasi (approve/reject)
+- Rating display di product card & shop detail
+- Review form di order-success (setelah delivered)
+- Testimonials dari real product reviews
+- Wishlist, recently viewed
+- Search bar dengan autocomplete dropdown
+- Blog / CMS system
+- Static pages (FAQ, Privacy, Terms, Refund)
+- Hero slider, promo banners, countdown, hero features
+- Newsletter subscribers
+- SEO settings per halaman
+- Store settings (warna, logo, kontak, sosmed)
+- Auth (email/password bcrypt + Google OAuth)
+- Customer profile & order history
+- Image upload via ImageKit (crop support)
+- Dynamic theming (primary color dari store settings)
+- Email notifications via Resend (order confirmation, status update, admin notif, payment proof)
+- Coupon discount tersimpan di order & tampil di detail + email
+- Balas pesan contact form dari admin (reply ke email pengirim)
 
-### 1. Hubungkan shop ke database (ganti mock data)
-- [x] Update `src/components/Shop/shopData.ts` untuk match Product type baru
-- [x] Update `src/components/ShopWithSidebar/index.tsx` untuk fetch produk real
-- [x] Update `src/components/ShopDetails/index.tsx` untuk ambil produk dari database
-- [x] Buat/gunakan server action untuk get products
+---
 
-### 2. Fix cart-product mismatch (ubah cart slice)
-- [x] Update `src/redux/features/cart-slice.ts`:
-  - Ubah `id: number` menjadi `id: string` (UUID)
-  - Sesuaikan dengan struktur produk database
-  - Update semua fungsi yang menggunakan cart
-- [x] Update `src/components/Cart/SingleItem.tsx` untuk handle ID string
-- [x] Update `src/components/Shop/SingleGridItem.tsx` dan `SingleListItem.tsx`
+## 🔴 Prioritas Tinggi
 
-### 3. Buat createOrder() function
-- [x] Tambah fungsi `createOrder()` di `src/app/actions/order.ts`
-- [x] Handle: order items, payments, shipping, inventory update
-- [x] Validasi stock sebelum create order
-- [x] Update stock setelah order berhasil
+### Transaction Safety pada Order
+- [ ] Wrap `createOrder()` dalam database transaction
+- [ ] Rollback stock jika payment/insert gagal di tengah jalan
+- [ ] Handle race condition: 2 user beli produk stock terakhir bersamaan
 
-### 4. Fix security (hash password)
-- [x] Install bcrypt atau argon2
-- [x] Update `src/app/api/auth/[...nextauth]/route.ts`:
-  - [x] Hash password saat register
-  - [x] Compare hash saat login
-- [x] Buat migration untuk hash password existing
+### Input Validation
+- [ ] Install Zod dan buat schema untuk checkout form
+- [ ] Validasi server actions (createOrder, updateProfile, dll)
+- [ ] Sanitasi input pada form kontak dan review
 
-### 5. Connect checkout form ke order creation
-- [x] Update `src/components/Checkout/index.tsx`:
-  - Tambah form handler
-  - Validasi form data
-  - Panggil `createOrder()` saat submit
-- [x] Tambah loading state dan error handling
-- [x] Redirect ke success page setelah order created
+---
 
-## Prioritas Medium
+## 🟡 Prioritas Medium
 
-### 6. Implement payment gateway (Midtrans/Xendit)
-- [x] Pilih payment gateway (Midtrans untuk Indonesia)
-- [x] Setup API keys di .env
-- [x] Buat payment integration di `src/app/actions/payment.ts`
-- [x] Update checkout untuk handle payment flow
-- [x] Handle payment callback/webhook
+### Analytics & Reporting
+- [ ] Grafik penjualan per hari/minggu/bulan di dashboard admin
+- [ ] Laporan produk terlaris
+- [ ] Laporan pendapatan dengan export CSV
+- [ ] Customer analytics (new vs returning)
 
-### 7. Tambah shipping calculation
-- [x] Integrasi dengan API shipping (RajaOngkir/JNE)
-- [x] Update `src/components/Checkout/ShippingMethod.tsx`
-- [x] Hitung biaya berdasarkan berat dan lokasi
-- [ ] Cache shipping rates
+### Inventory Management
+- [ ] Alert low stock (notifikasi admin jika stok < threshold)
+- [ ] Riwayat perubahan stok (audit trail)
+- [ ] Bulk update stok dari admin
 
-### 8. Update admin dashboard dengan data real
-- [x] Update `src/components/Dashboard/StatCards.tsx`
-- [x] Fetch real data: total orders, revenue, customers
-- [x] Update recent orders dengan data real
-- [x] Update top products dengan data real
+### Pagination Admin
+- [ ] Pagination di halaman admin/products
+- [ ] Pagination di halaman admin/orders
+- [ ] Pagination di halaman admin/customers
+- [ ] Pagination di halaman admin/reviews
 
-## Prioritas Rendah
+### Checkout Improvements
+- [ ] Guest checkout (tanpa harus login)
+- [ ] Simpan multiple shipping address per user
+- [ ] Tampilkan notes order di detail order customer
 
-### 9. Email notifications
-- [ ] Setup email service (Nodemailer/Resend)
-- [ ] Send order confirmation email
-- [ ] Send shipping notification
+### Return / Refund Management
+- [ ] Flow pengajuan retur dari customer
+- [ ] Admin bisa approve/reject retur
+- [ ] Update status order ke "returned"
 
-### 10. Inventory management
-- [ ] Low stock alerts
-- [ ] Stock history tracking
-- [ ] Bulk stock update
+---
 
-### 11. Analytics & reporting
-- [ ] Sales reports
-- [ ] Customer analytics
-- [ ] Product performance
+## 🟢 Prioritas Rendah / Nice to Have
 
-## Testing
-- [ ] Test cart functionality
-- [ ] Test checkout flow
-- [ ] Test payment integration
-- [ ] Test admin features
+### Product Enhancements
+- [ ] Product variants (ukuran, warna, dll)
+- [ ] Product bundling / paket hemat
+- [ ] Pre-order / backorder support
+- [ ] Product recommendations (related by category/tag)
+- [ ] Social share button di halaman produk
 
-## Notes
-- Database schema sudah lengkap
-- Authentication sudah setup (butuh password hashing)
-- UI components sudah ada (butuh koneksi ke data real)
-- Target: MVP functional dalam 2-3 hari
+### Shipping
+- [ ] Cache shipping rates (jangan hit API tiap kali)
+- [ ] Fallback jika RajaOngkir API down
+- [ ] Estimasi tiba hari di checkout
+
+### Customer Loyalty
+- [ ] Poin reward setiap pembelian
+- [ ] Redeem poin sebagai diskon
+- [ ] Tier customer (regular, silver, gold)
+
+### Operational
+- [ ] Bulk export orders ke CSV/Excel
+- [ ] Manajemen role admin (super admin, operator, dll)
+- [ ] Activity log admin (siapa ubah apa)
+- [ ] Notifikasi WhatsApp (Fonnte/WA gateway)
+
+### Performance
+- [ ] Database indexes untuk query umum (userId, productId, orderId)
+- [ ] Pagination / virtual scroll untuk list panjang di frontend
+- [ ] Rate limiting pada API endpoints publik
+
+### Testing
+- [ ] Setup testing (Jest / Vitest)
+- [ ] Unit test untuk server actions kritis (createOrder, payment)
+- [ ] E2E test checkout flow (Playwright/Cypress)
+
+---
+
+## 📝 Technical Debt
+- Hapus PayPal option dari UI atau implementasi (saat ini hanya placeholder)
+- Ganti SQLite ke PostgreSQL jika traffic mulai besar
+- Tambah `updatedAt` field ke tabel orders dan payments
+- Review error messages agar tidak leak info sensitif ke client
+- Debug logs `[order]` dan `[email]` di email.ts / order.ts perlu dihapus sebelum production
