@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { orders, users, orderItems as orderItemsTable, products, payments, shipping, productImages, stockHistory } from "@/db/schema";
-import { eq, and, gte, sql, count } from "drizzle-orm";
+import { eq, and, gte, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import * as crypto from "crypto";
@@ -248,13 +248,12 @@ export async function createOrder(
     const orderId = crypto.randomUUID();
 
     // Semua operasi DB dalam satu transaksi — auto rollback jika ada yang gagal
-    db.transaction((tx) => {
+    await db.transaction(async (tx) => {
       // Validasi & deduct stock secara atomik untuk mencegah race condition
       for (const item of orderData.items) {
-        const product = tx.select({ id: products.id, name: products.name, stock: products.stock })
+        const [product] = await tx.select({ id: products.id, name: products.name, stock: products.stock })
           .from(products)
-          .where(eq(products.id, item.productId))
-          .get();
+          .where(eq(products.id, item.productId));
 
         if (!product) throw new Error(`Produk tidak ditemukan`);
         if (product.stock < item.quantity) {
@@ -262,28 +261,28 @@ export async function createOrder(
         }
 
         // Atomic decrement: hanya berhasil jika stock masih >= quantity saat update
-        tx.update(products)
-          .set({ stock: sql`stock - ${item.quantity}` })
-          .where(and(eq(products.id, item.productId), gte(products.stock, item.quantity)))
-          .run();
+        const newStock = product.stock - item.quantity;
+        await tx.update(products)
+          .set({ stock: newStock })
+          .where(and(eq(products.id, item.productId), gte(products.stock, item.quantity)));
 
         // Verifikasi update berhasil (guard tambahan)
-        const updated = tx.select({ stock: products.stock }).from(products).where(eq(products.id, item.productId)).get();
+        const [updated] = await tx.select({ stock: products.stock }).from(products).where(eq(products.id, item.productId));
         if (!updated || updated.stock < 0) throw new Error(`Stok ${product.name} habis`);
 
         // Catat riwayat stok
-        tx.insert(stockHistory).values({
+        await tx.insert(stockHistory).values({
           productId: item.productId,
           previousStock: product.stock,
           newStock: updated.stock,
           change: -item.quantity,
           reason: "order",
           referenceId: orderId,
-        }).run();
+        });
       }
 
       // Insert order
-      tx.insert(orders).values({
+      await tx.insert(orders).values({
         id: orderId,
         userId: orderData.userId ?? null,
         orderDate: new Date().toISOString(),
@@ -296,31 +295,31 @@ export async function createOrder(
         guestEmail: !orderData.userId ? orderData.customerDetails.email : null,
         guestName: !orderData.userId ? `${orderData.customerDetails.firstName} ${orderData.customerDetails.lastName ?? ""}`.trim() : null,
         guestPhone: !orderData.userId ? orderData.customerDetails.phone : null,
-      }).run();
+      });
 
       // Insert order items
       for (const item of orderData.items) {
-        tx.insert(orderItemsTable).values({
+        await tx.insert(orderItemsTable).values({
           id: crypto.randomUUID(),
           orderId,
           productId: item.productId,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           subtotalWeight: item.weight * item.quantity,
-        }).run();
+        });
       }
 
       // Insert payment record
-      tx.insert(payments).values({
+      await tx.insert(payments).values({
         id: crypto.randomUUID(),
         orderId,
         paymentMethod: orderData.paymentData.paymentMethod,
         paymentAmount: orderData.paymentData.paymentAmount,
         paymentStatus: "pending",
-      }).run();
+      });
 
       // Insert shipping record
-      tx.insert(shipping).values({
+      await tx.insert(shipping).values({
         id: crypto.randomUUID(),
         orderId,
         destinationProvinceId: orderData.shippingData.destinationProvinceId,
@@ -330,7 +329,7 @@ export async function createOrder(
         totalWeight: orderData.shippingData.totalWeight,
         shippingCost: orderData.shippingData.shippingCost,
         shippingStatus: "pending",
-      }).run();
+      });
     });
 
     revalidatePath("/admin/orders");

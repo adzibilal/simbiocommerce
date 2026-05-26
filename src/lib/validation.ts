@@ -93,7 +93,8 @@ export const submitReviewSchema = z.object({
 export function parseSchema<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; error: string } {
   const result = schema.safeParse(data);
   if (!result.success) {
-    const first = result.error.errors[0];
+    const issues = result.error.issues ?? (result.error as any).errors ?? [];
+    const first = issues[0];
     return { success: false, error: first?.message ?? result.error.message };
   }
   return { success: true, data: result.data };

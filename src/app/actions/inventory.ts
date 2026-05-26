@@ -74,32 +74,30 @@ export async function bulkUpdateStock(updates: { productId: string; newStock: nu
   if (!updates.length) return { success: true };
 
   try {
-    db.transaction((tx) => {
+    await db.transaction(async (tx) => {
       for (const { productId, newStock } of updates) {
         if (newStock < 0) throw new Error("Stok tidak boleh negatif");
 
-        const product = tx.select({ stock: products.stock })
+        const [product] = await tx.select({ stock: products.stock })
           .from(products)
-          .where(eq(products.id, productId))
-          .get();
+          .where(eq(products.id, productId));
 
         if (!product) continue;
 
         const change = newStock - product.stock;
         if (change === 0) continue;
 
-        tx.update(products)
+        await tx.update(products)
           .set({ stock: newStock, updatedAt: new Date().toISOString() })
-          .where(eq(products.id, productId))
-          .run();
+          .where(eq(products.id, productId));
 
-        tx.insert(stockHistory).values({
+        await tx.insert(stockHistory).values({
           productId,
           previousStock: product.stock,
           newStock,
           change,
           reason: "bulk_update",
-        }).run();
+        });
       }
     });
 
