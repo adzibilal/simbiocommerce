@@ -19,6 +19,10 @@ export interface PaymentSettings {
 
   // Cash on Delivery
   codEnabled: boolean;
+
+  // QRIS
+  qrisEnabled: boolean;
+  qrisImageUrl: string;
 }
 
 export interface ShippingSettings {

@@ -26,7 +26,7 @@ export const billingSchema = z.object({
 });
 
 export const createOrderSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().uuid().optional(),
   items: z.array(z.object({
     productId: z.string().uuid(),
     quantity: z.number().int().min(1).max(1000),
@@ -42,7 +42,7 @@ export const createOrderSchema = z.object({
     totalWeight: z.number().min(0),
   }),
   paymentData: z.object({
-    paymentMethod: z.enum(["midtrans", "bank_transfer", "cod"]),
+    paymentMethod: z.enum(["midtrans", "bank_transfer", "cod", "qris"]),
     paymentAmount: z.number().int().min(0),
   }),
   customerDetails: z.object({
@@ -94,7 +94,7 @@ export function parseSchema<T>(schema: z.ZodSchema<T>, data: unknown): { success
   const result = schema.safeParse(data);
   if (!result.success) {
     const first = result.error.errors[0];
-    return { success: false, error: first.message };
+    return { success: false, error: first?.message ?? result.error.message };
   }
   return { success: true, data: result.data };
 }

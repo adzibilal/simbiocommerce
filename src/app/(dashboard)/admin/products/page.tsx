@@ -1,6 +1,6 @@
 import React from "react";
 import ProductTable from "@/components/Dashboard/ProductTable";
-import { getProducts } from "@/app/actions/product";
+import { getProductsPaginated } from "@/app/actions/product";
 import Link from "next/link";
 import Pagination from "@/components/Dashboard/Pagination";
 
@@ -9,7 +9,7 @@ const PER_PAGE = 20;
 const ProductsPage = async ({ searchParams }: { searchParams: Promise<{ page?: string }> }) => {
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1"));
-  const { data: products, total } = await getProducts(page, PER_PAGE);
+  const { data: products, total } = await getProductsPaginated(page, PER_PAGE);
   const totalPages = Math.ceil(total / PER_PAGE);
 
   return (

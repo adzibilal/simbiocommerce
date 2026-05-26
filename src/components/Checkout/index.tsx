@@ -94,12 +94,19 @@ const Checkout = ({ paymentSettings, originCityId, userProfile, savedAddresses =
   const [snapLoaded, setSnapLoaded] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Available payment methods based on settings
-  const availableMethods = [
+  // Online payment methods (shown as radio list)
+  const onlineMethods = [
     paymentSettings?.midtransEnabled && { id: "midtrans", label: "Midtrans", description: "Kartu kredit, e-wallet, virtual account" },
-    paymentSettings?.bankTransferEnabled && { id: "bank_transfer", label: "Transfer Bank", description: "Transfer manual ke rekening kami" },
     paymentSettings?.codEnabled && { id: "cod", label: "Cash on Delivery (COD)", description: "Bayar saat paket tiba" },
   ].filter(Boolean) as { id: string; label: string; description: string }[];
+
+  // Manual payment methods (shown as separate cards)
+  const manualMethods = [
+    paymentSettings?.bankTransferEnabled && { id: "bank_transfer", label: "Transfer Bank", description: "Transfer ke rekening kami, lalu upload bukti" },
+    paymentSettings?.qrisEnabled && { id: "qris", label: "QRIS", description: "Scan QRIS, lalu upload bukti pembayaran" },
+  ].filter(Boolean) as { id: string; label: string; description: string }[];
+
+  const availableMethods = [...onlineMethods, ...manualMethods];
 
   // Auto-select first available method
   useEffect(() => {
@@ -140,7 +147,7 @@ const Checkout = ({ paymentSettings, originCityId, userProfile, savedAddresses =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    if (paymentMethod === "cod" || paymentMethod === "bank_transfer") {
+    if (paymentMethod === "cod" || paymentMethod === "bank_transfer" || paymentMethod === "qris") {
       setShowConfirm(true);
       return;
     }
@@ -280,50 +287,80 @@ const Checkout = ({ paymentSettings, originCityId, userProfile, savedAddresses =
                   {availableMethods.length === 0 ? (
                     <p className="text-sm text-dark-4">Belum ada metode pembayaran yang aktif. Hubungi admin.</p>
                   ) : (
-                    <div className="space-y-3">
-                      {availableMethods.map((method) => (
-                        <label
-                          key={method.id}
-                          className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
-                            paymentMethod === method.id
-                              ? "border-blue bg-blue/5"
-                              : "border-gray-3 hover:border-gray-4"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="paymentMethod"
-                            value={method.id}
-                            checked={paymentMethod === method.id}
-                            onChange={() => setPaymentMethod(method.id)}
-                            className="mt-1 accent-blue"
-                          />
-                          <div>
-                            <p className="font-medium text-dark text-sm">{method.label}</p>
-                            <p className="text-xs text-dark-4 mt-0.5">{method.description}</p>
-                          </div>
-                        </label>
-                      ))}
-
-                      {/* Bank accounts info */}
-                      {paymentMethod === "bank_transfer" && paymentSettings?.bankAccounts && paymentSettings.bankAccounts.length > 0 && (
-                        <div className="mt-3 p-4 bg-gray-1 rounded-xl border border-gray-3 space-y-3">
-                          <p className="text-sm font-medium text-dark">Rekening Tujuan Transfer:</p>
-                          {paymentSettings.bankAccounts.map((acc) => (
-                            <div key={acc.id} className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-blue/10 flex items-center justify-center shrink-0">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue">
-                                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
-                                </svg>
-                              </div>
+                    <div className="space-y-5">
+                      {/* Online methods — radio list */}
+                      {onlineMethods.length > 0 && (
+                        <div className="space-y-3">
+                          {onlineMethods.map((method) => (
+                            <label
+                              key={method.id}
+                              className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
+                                paymentMethod === method.id
+                                  ? "border-blue bg-blue/5"
+                                  : "border-gray-3 hover:border-gray-4"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value={method.id}
+                                checked={paymentMethod === method.id}
+                                onChange={() => setPaymentMethod(method.id)}
+                                className="mt-1 accent-blue"
+                              />
                               <div>
-                                <p className="text-sm font-semibold text-dark">{acc.bankName}</p>
-                                <p className="text-xs text-dark-4">{acc.accountNumber} · {acc.accountHolder}</p>
+                                <p className="font-medium text-dark text-sm">{method.label}</p>
+                                <p className="text-xs text-dark-4 mt-0.5">{method.description}</p>
                               </div>
-                            </div>
+                            </label>
                           ))}
-                          <p className="text-xs text-dark-4">Setelah transfer, admin akan memverifikasi pembayaran Anda.</p>
                         </div>
+                      )}
+
+                      {/* Manual methods — separate cards (QRIS & Bank Transfer) */}
+                      {manualMethods.length > 0 && (
+                        <>
+                          {(onlineMethods.length > 0) && (
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 h-px bg-gray-3" />
+                              <span className="text-xs text-dark-4 shrink-0">atau bayar manual</span>
+                              <div className="flex-1 h-px bg-gray-3" />
+                            </div>
+                          )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {manualMethods.map((method) => (
+                              <button
+                                key={method.id}
+                                type="button"
+                                onClick={() => setPaymentMethod(method.id)}
+                                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-colors text-left ${
+                                  paymentMethod === method.id
+                                    ? "border-blue bg-blue/5"
+                                    : "border-gray-3 hover:border-gray-4"
+                                }`}
+                              >
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                  paymentMethod === method.id ? "bg-blue text-white" : "bg-gray-1 text-dark-4"
+                                }`}>
+                                  {method.id === "qris" ? (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                                      <rect x="3" y="14" width="7" height="7"/><path d="M14 14h.01M17 14h3M17 17h3M20 14v.01"/>
+                                    </svg>
+                                  ) : (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                                    </svg>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-dark text-sm">{method.label}</p>
+                                  <p className="text-xs text-dark-4 mt-0.5 leading-relaxed">{method.description}</p>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </>
                       )}
                     </div>
                   )}
@@ -465,6 +502,32 @@ const Checkout = ({ paymentSettings, originCityId, userProfile, savedAddresses =
                   </div>
                   <p className="text-xs text-dark-4 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
                     ⚠️ Pesanan akan diproses setelah admin mengkonfirmasi pembayaran kamu.
+                  </p>
+                </div>
+                <div className="px-6 pb-6 flex gap-3">
+                  <button onClick={() => setShowConfirm(false)} className="flex-1 py-3 rounded-xl border border-gray-3 text-dark font-medium hover:bg-gray-1 transition-colors text-sm">
+                    Batal
+                  </button>
+                  <button onClick={placeOrder} disabled={isSubmitting} className="flex-1 py-3 rounded-xl bg-blue text-white font-medium hover:bg-blue-dark transition-colors text-sm disabled:opacity-50">
+                    {isSubmitting ? "Memproses..." : "Buat Pesanan"}
+                  </button>
+                </div>
+              </>
+            ) : paymentMethod === "qris" ? (
+              <>
+                <div className="px-6 pt-6 pb-4">
+                  <div className="w-14 h-14 rounded-full bg-blue/10 flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-7 h-7 text-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                      <rect x="3" y="14" width="7" height="7"/><path d="M14 14h.01M17 14h3M17 17h3M20 14v.01"/>
+                    </svg>
+                  </div>
+                  <h3 className="font-bold text-lg text-dark text-center">Konfirmasi Pembayaran QRIS</h3>
+                  <p className="text-sm text-dark-4 text-center mt-2">
+                    Total pembayaran <span className="font-bold text-dark">{formatCurrency(grandTotal)}</span>
+                  </p>
+                  <p className="text-xs text-dark-4 text-center mt-3 bg-blue/5 border border-blue/20 rounded-lg px-3 py-2">
+                    Setelah pesanan dibuat, scan QRIS dan upload bukti pembayaran di halaman konfirmasi.
                   </p>
                 </div>
                 <div className="px-6 pb-6 flex gap-3">

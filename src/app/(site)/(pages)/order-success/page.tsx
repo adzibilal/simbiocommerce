@@ -1,9 +1,11 @@
 import { getOrderDetail, syncPaymentStatus } from "@/app/actions/order";
+import { getPaymentSettings } from "@/app/actions/store-settings";
 import { formatCurrency } from "@/lib/currency";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import PaymentProofUpload from "@/components/PaymentProofUpload";
+import PaymentInfoModal from "@/components/PaymentInfoModal";
 import ReviewForm from "@/components/ReviewForm";
 import { getOrderReviews } from "@/app/actions/review";
 import { getServerSession } from "next-auth";
@@ -21,9 +23,10 @@ export default async function OrderSuccessPage({
   // Sync with Midtrans in case webhook hasn't fired yet (e.g. localhost)
   await syncPaymentStatus(orderId);
 
-  const [order, session] = await Promise.all([
+  const [order, session, paymentSettings] = await Promise.all([
     getOrderDetail(orderId),
     getServerSession(authOptions),
+    getPaymentSettings(),
   ]);
   const customerId = session?.user?.id as string | undefined;
 
@@ -37,6 +40,7 @@ export default async function OrderSuccessPage({
   const isPending = status === "pending" || order.paymentStatus === "pending";
   const isCoD = order.paymentMethod === "cod";
   const isBankTransfer = order.paymentMethod === "bank_transfer";
+  const isQris = order.paymentMethod === "qris";
 
   return (
     <section className="bg-gray-2 min-h-screen pt-[240px] sm:pt-[185px] lg:pt-[130px] xl:pt-[200px] pb-20">
@@ -63,6 +67,8 @@ export default async function OrderSuccessPage({
               ? "Pesanan kamu sudah kami terima. Bayar saat paket tiba."
               : isBankTransfer
               ? "Silakan transfer ke rekening kami. Pesanan akan diproses setelah pembayaran dikonfirmasi."
+              : isQris
+              ? "Scan QRIS di bawah dan upload bukti pembayaran. Pesanan akan diproses setelah dikonfirmasi."
               : isPending
               ? "Pembayaran sedang diproses. Kami akan segera mengkonfirmasi pesanan kamu."
               : "Terima kasih! Pesanan kamu sedang kami proses."}
@@ -151,16 +157,30 @@ export default async function OrderSuccessPage({
           </div>
         </div>
 
-        {/* Bank transfer proof upload */}
-        {order.paymentMethod === "bank_transfer" && (
-          <div className="bg-white rounded-2xl shadow-1 p-6 mb-6">
-            <h3 className="font-semibold text-dark mb-1">Upload Bukti Transfer</h3>
-            <p className="text-sm text-dark-4 mb-4">
-              {order.paymentProof
-                ? "Bukti transfer kamu sudah kami terima."
-                : "Wajib upload foto bukti transfer agar pesanan segera diproses oleh admin."}
-            </p>
-            <PaymentProofUpload orderId={order.id} existingProof={order.paymentProof} />
+        {/* QRIS / Bank Transfer — modal + upload bukti */}
+        {(isBankTransfer || isQris) && (
+          <div className="bg-white rounded-2xl shadow-1 p-6 mb-6 space-y-4">
+            {/* Auto-open modal on first load */}
+            <PaymentInfoModal
+              paymentMethod={isBankTransfer ? "bank_transfer" : "qris"}
+              qrisImageUrl={paymentSettings?.qrisImageUrl}
+              bankAccounts={paymentSettings?.bankAccounts}
+              autoOpen={true}
+            />
+
+            <div className="border-t border-gray-2 pt-4">
+              <h3 className="font-semibold text-dark mb-1">
+                {isBankTransfer ? "Upload Bukti Transfer" : "Upload Bukti Pembayaran"}
+              </h3>
+              <p className="text-sm text-dark-4 mb-4">
+                {order.paymentProof
+                  ? "Bukti pembayaran kamu sudah kami terima."
+                  : isBankTransfer
+                  ? "Wajib upload foto bukti transfer agar pesanan segera diproses."
+                  : "Setelah scan dan bayar, upload screenshot bukti pembayaran."}
+              </p>
+              <PaymentProofUpload orderId={order.id} existingProof={order.paymentProof} />
+            </div>
           </div>
         )}
 

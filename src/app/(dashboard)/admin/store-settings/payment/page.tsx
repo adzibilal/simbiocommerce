@@ -12,6 +12,8 @@ import {
 } from "@/app/actions/store-settings";
 import type { PaymentSettings, BankAccount } from "@/types/store-settings";
 import toast from "react-hot-toast";
+import { upload } from "@imagekit/next";
+import Image from "next/image";
 
 const defaultFormData: PaymentSettings = {
   bankTransferEnabled: false,
@@ -22,6 +24,8 @@ const defaultFormData: PaymentSettings = {
   merchantId: "",
   isProduction: false,
   codEnabled: false,
+  qrisEnabled: false,
+  qrisImageUrl: "",
 };
 
 const inputClass =
@@ -75,6 +79,7 @@ export default function PaymentSettingsPage() {
     accountHolder: "",
   });
   const [addingBank, setAddingBank] = useState(false);
+  const [qrisUploading, setQrisUploading] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -167,6 +172,32 @@ export default function PaymentSettingsPage() {
       ...prev,
       bankAccounts: prev.bankAccounts.filter((b) => b.id !== id),
     }));
+  };
+
+  const handleQrisUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setQrisUploading(true);
+    try {
+      const authRes = await fetch("/api/upload-auth");
+      const { token, expire, signature, publicKey, folder } = await authRes.json();
+      const result = await upload({
+        file,
+        fileName: `qris-${Date.now()}`,
+        publicKey,
+        signature,
+        expire,
+        token,
+        folder: `${folder}/qris`,
+      });
+      setFormData((prev) => ({ ...prev, qrisImageUrl: result.url }));
+      toast.success("Gambar QRIS berhasil diupload");
+    } catch {
+      toast.error("Gagal upload gambar QRIS");
+    } finally {
+      setQrisUploading(false);
+      e.target.value = "";
+    }
   };
 
   if (loading) {
@@ -403,6 +434,86 @@ export default function PaymentSettingsPage() {
             label="Cash on Delivery (CoD)"
             description="Customers pay in cash when the order is delivered."
           />
+        </div>
+
+        {/* ── QRIS ── */}
+        <div className="bg-white p-6 rounded-2xl shadow-1 border border-gray-2 space-y-5">
+          <Toggle
+            checked={formData.qrisEnabled}
+            onChange={(v) => setFormData({ ...formData, qrisEnabled: v })}
+            label="QRIS"
+            description="Tampilkan kode QRIS untuk pembayaran. Customer wajib upload bukti bayar setelah scan."
+          />
+
+          {formData.qrisEnabled && (
+            <div className="pt-2 border-t border-gray-2 space-y-4">
+              <p className="text-custom-sm font-medium text-dark">Gambar QRIS</p>
+
+              {formData.qrisImageUrl && (
+                <div className="flex items-start gap-4">
+                  <div className="w-40 h-40 rounded-xl border border-gray-3 overflow-hidden bg-gray-1 shrink-0">
+                    <Image
+                      src={formData.qrisImageUrl}
+                      alt="QRIS"
+                      width={160}
+                      height={160}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-custom-xs text-body">Gambar QRIS aktif. Upload baru untuk mengganti.</p>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, qrisImageUrl: "" }))}
+                      className="text-custom-xs text-red hover:text-red-dark font-medium"
+                    >
+                      Hapus gambar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer w-fit">
+                  <div className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-3 text-custom-sm font-medium text-dark hover:bg-gray-1 duration-200 ${qrisUploading ? "opacity-60 pointer-events-none" : ""}`}>
+                    {qrisUploading ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                        </svg>
+                        {formData.qrisImageUrl ? "Ganti Gambar QRIS" : "Upload Gambar QRIS"}
+                      </>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleQrisUpload}
+                    disabled={qrisUploading}
+                  />
+                </label>
+                <p className="mt-2 text-custom-xs text-body">Disarankan: foto QRIS square, format JPG/PNG, maks 2MB.</p>
+              </div>
+
+              {!formData.qrisImageUrl && (
+                <p className="text-custom-xs text-yellow-600 flex items-center gap-1.5">
+                  <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Gambar QRIS belum diupload. Customer tidak akan bisa melihat QRIS saat checkout.
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-3">

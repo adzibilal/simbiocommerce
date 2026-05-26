@@ -6,7 +6,54 @@ import { eq, and, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import * as crypto from "crypto";
 
-export async function getProducts(page = 1, perPage = 20) {
+async function buildProductList(productsData: any[], allImages: any[], allReviews: any[]) {
+  return productsData.map((p) => {
+    const imgs = allImages
+      .filter((i: any) => i.productId === p.id)
+      .sort((a: any, b: any) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
+    const productReviews = allReviews.filter((r: any) => r.productId === p.id);
+    const reviewCount = productReviews.length;
+    const avgRating = reviewCount > 0
+      ? Math.round((productReviews.reduce((s: number, r: any) => s + r.rating, 0) / reviewCount) * 10) / 10
+      : null;
+    return {
+      ...p,
+      imageUrl: imgs.find((i: any) => i.isPrimary)?.imageUrl ?? imgs[0]?.imageUrl ?? undefined,
+      images: imgs.map((i: any) => i.imageUrl),
+      avgRating,
+      reviewCount,
+    };
+  });
+}
+
+export async function getProducts() {
+  const [productsData, allImages, allReviews] = await Promise.all([
+    db
+      .select({
+        id: products.id,
+        name: products.name,
+        slug: products.slug,
+        price: products.price,
+        stock: products.stock,
+        isActive: products.isActive,
+        category: categories.name,
+        categoryId: products.categoryId,
+        sku: products.sku,
+        weight: products.weight,
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id)),
+    db.select().from(productImages),
+    db.select({
+      productId: reviews.productId,
+      rating: reviews.rating,
+    }).from(reviews).where(eq(reviews.status, "approved")),
+  ]);
+
+  return buildProductList(productsData, allImages, allReviews);
+}
+
+export async function getProductsPaginated(page = 1, perPage = 20) {
   const offset = (page - 1) * perPage;
   const [productsData, allImages, allReviews, totalRows] = await Promise.all([
     db
@@ -34,24 +81,7 @@ export async function getProducts(page = 1, perPage = 20) {
     db.select({ count: count() }).from(products),
   ]);
 
-  const data = productsData.map((p) => {
-    const imgs = allImages
-      .filter((i) => i.productId === p.id)
-      .sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
-    const productReviews = allReviews.filter((r) => r.productId === p.id);
-    const reviewCount = productReviews.length;
-    const avgRating = reviewCount > 0
-      ? Math.round((productReviews.reduce((s, r) => s + r.rating, 0) / reviewCount) * 10) / 10
-      : null;
-    return {
-      ...p,
-      imageUrl: imgs.find((i) => i.isPrimary)?.imageUrl ?? imgs[0]?.imageUrl ?? undefined,
-      images: imgs.map((i) => i.imageUrl),
-      avgRating,
-      reviewCount,
-    };
-  });
-
+  const data = await buildProductList(productsData, allImages, allReviews);
   return { data, total: totalRows[0].count };
 }
 

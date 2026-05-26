@@ -39,6 +39,9 @@
 - Guest checkout (tanpa harus login)
 - Simpan multiple shipping address per user
 - Tampilkan notes order di detail order customer (customer & admin)
+- QRIS sebagai metode pembayaran (upload gambar QR, popup modal, upload bukti bayar)
+- Cache shipping rates (1 jam, per origin-destination-weight-courier)
+- Fallback & retry jika RajaOngkir API down
 
 ---
 
@@ -67,8 +70,6 @@
 - [ ] Social share button di halaman produk
 
 ### Shipping
-- [ ] Cache shipping rates (jangan hit API tiap kali)
-- [ ] Fallback jika RajaOngkir API down
 - [ ] Estimasi tiba hari di checkout
 
 ### Customer Loyalty
