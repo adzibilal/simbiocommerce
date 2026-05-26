@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   description: "Browse our full product catalog.",
 };
 
-const ShopPage = async () => {
+const ShopPage = async ({ searchParams }: { searchParams: Promise<{ q?: string }> }) => {
+  const { q } = await searchParams;
   const [products, categories] = await Promise.all([
     getProducts(),
     getCategories(),
@@ -19,7 +20,7 @@ const ShopPage = async () => {
 
   return (
     <main>
-      <ShopGrid products={activeProducts} categories={categories} />
+      <ShopGrid products={activeProducts} categories={categories} initialSearch={q ?? ""} />
     </main>
   );
 };

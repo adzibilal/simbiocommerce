@@ -12,6 +12,7 @@ interface Category {
 interface ShopGridProps {
   products: Product[];
   categories: Category[];
+  initialSearch?: string;
 }
 
 const SORT_OPTIONS = [
@@ -21,10 +22,10 @@ const SORT_OPTIONS = [
   { label: "Nama A–Z", value: "name_asc" },
 ];
 
-const ShopGrid = ({ products, categories }: ShopGridProps) => {
+const ShopGrid = ({ products, categories, initialSearch = "" }: ShopGridProps) => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [sort, setSort] = useState("newest");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
 
   const filtered = useMemo(() => {
     let result = [...products];
@@ -54,7 +55,7 @@ const ShopGrid = ({ products, categories }: ShopGridProps) => {
   }, [products, activeCategory, sort, search]);
 
   return (
-    <section className="py-14 font-euclid-circular-a">
+    <section className="pt-[240px] sm:pt-[185px] lg:pt-[130px] xl:pt-[160px] pb-14 font-euclid-circular-a">
       <div className="max-w-[1170px] mx-auto px-4 sm:px-8 xl:px-0">
         {/* Header */}
         <div className="mb-8">
