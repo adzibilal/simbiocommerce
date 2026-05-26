@@ -2,10 +2,7 @@
 import React, { useEffect, useState } from "react";
 
 import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
-import {
-  removeItemFromCart,
-  selectTotalPrice,
-} from "@/redux/features/cart-slice";
+import { selectTotalPrice } from "@/redux/features/cart-slice";
 import { useAppSelector } from "@/redux/store";
 import { useSelector } from "react-redux";
 import SingleItem from "./SingleItem";
@@ -80,11 +77,7 @@ const CartSidebarModal = () => {
               {/* <!-- cart item --> */}
               {cartItems.length > 0 ? (
                 cartItems.map((item, key) => (
-                  <SingleItem
-                    key={key}
-                    item={item}
-                    removeItemFromCart={removeItemFromCart}
-                  />
+                  <SingleItem key={key} item={item} />
                 ))
               ) : (
                 <EmptyCart />
@@ -110,6 +103,7 @@ const CartSidebarModal = () => {
 
               <Link
                 href="/checkout"
+                onClick={closeCartModal}
                 className="w-full flex justify-center font-medium text-white bg-dark py-[13px] px-6 rounded-md ease-out duration-200 hover:bg-opacity-95"
               >
                 Checkout

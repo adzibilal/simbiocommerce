@@ -46,28 +46,34 @@ export async function calculateShippingCost(params: {
 }) {
   try {
     const apiKey = await getApiKey();
+
+    const body = new URLSearchParams({
+      origin: String(params.origin),
+      destination: String(params.destination),
+      weight: String(params.weight),
+      courier: params.courier,
+    });
+
     const response = await fetch(`${RAJAONGKIR_BASE_URL}/calculate/domestic-cost`, {
       method: "POST",
       headers: {
         key: apiKey,
-        "Content-Type": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: JSON.stringify({
-        origin: params.origin,
-        destination: params.destination,
-        weight: params.weight,
-        courier: params.courier,
-      }),
+      body: body.toString(),
     });
 
-    if (!response.ok) {
-      return { success: false, error: `HTTP ${response.status}` };
+    const data = await response.json();
+
+    if (!response.ok || data?.meta?.code !== 200) {
+      return { success: false, error: data?.meta?.message ?? `HTTP ${response.status}`, results: [] };
     }
 
-    const data = await response.json();
-    return { success: true, results: data.data ?? data };
+    // V2 response: data is flat array of services
+    // [{ code, name, service, description, cost, etd }, ...]
+    return { success: true, results: data.data ?? [] };
   } catch (error: any) {
     console.error("Failed to calculate shipping cost:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message, results: [] };
   }
 }

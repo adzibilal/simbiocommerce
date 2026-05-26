@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, primaryKey } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, primaryKey, unique } from 'drizzle-orm/sqlite-core';
 
 export const categories = sqliteTable('categories', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -73,6 +73,7 @@ export const payments = sqliteTable('payments', {
   paymentStatus: text('payment_status').default('pending'),
   paymentDate: text('payment_date'),
   paymentAmount: integer('payment_amount'),
+  paymentProof: text('payment_proof'),
 });
 
 export const shipping = sqliteTable('shipping', {
@@ -153,9 +154,11 @@ export const posts = sqliteTable('posts', {
 export const reviews = sqliteTable('reviews', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   productId: text('product_id').references(() => products.id),
+  orderId: text('order_id').references(() => orders.id),
   customerId: text('customer_id').references(() => users.id),
   rating: integer('rating').notNull(),
   comment: text('comment'),
+  imageUrl: text('image_url'),
   date: text('date').$defaultFn(() => new Date().toISOString()),
   status: text('status').default('pending'), // pending, approved, rejected
 });
@@ -293,6 +296,36 @@ export const newsletterSubscribers = sqliteTable('newsletter_subscribers', {
   subscribedAt: text('subscribed_at').$defaultFn(() => new Date().toISOString()),
   unsubscribedAt: text('unsubscribed_at'),
 });
+
+export const contactMessages = sqliteTable('contact_messages', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
+  email: text('email').notNull(),
+  phone: text('phone'),
+  subject: text('subject'),
+  message: text('message').notNull(),
+  status: text('status').default('unread'), // unread, read, replied
+  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
+});
+
+export const wishlists = sqliteTable('wishlists', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  productId: text('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
+}, (t) => ({
+  uniq: unique().on(t.userId, t.productId),
+}));
+
+export const recentlyViewed = sqliteTable('recently_viewed', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  productId: text('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  viewedAt: text('viewed_at').$defaultFn(() => new Date().toISOString()),
+}, (t) => ({
+  uniq: unique().on(t.userId, t.productId),
+}));
 
 export const settingsAuditLog = sqliteTable('settings_audit_log', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),

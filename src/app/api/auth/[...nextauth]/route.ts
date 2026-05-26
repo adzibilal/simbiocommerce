@@ -33,7 +33,7 @@ export const authOptions = {
     })
   ],
   pages: {
-    signIn: "/login",
+    signIn: "/signin",
   },
   session: {
     strategy: "jwt" as const,

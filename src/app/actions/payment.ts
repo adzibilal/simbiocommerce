@@ -30,6 +30,8 @@ export async function createPaymentToken(orderId: string, amount: number, custom
   try {
     const snap = await getSnapClient();
     
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
     const parameter = {
       transaction_details: {
         order_id: orderId,
@@ -43,6 +45,9 @@ export async function createPaymentToken(orderId: string, amount: number, custom
       },
       credit_card: {
         secure: true,
+      },
+      callbacks: {
+        finish: `${baseUrl}/order-success?orderId=${orderId}`,
       },
     };
 

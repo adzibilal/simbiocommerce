@@ -7,9 +7,11 @@ import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   const storeInfo = await getStoreInfo();
+  const iconUrl = storeInfo?.faviconUrl || "/favicon.ico";
   return {
     icons: {
-      icon: storeInfo?.faviconUrl || "/favicon.ico",
+      icon: [{ url: iconUrl }],
+      shortcut: [{ url: iconUrl }],
     },
   };
 }

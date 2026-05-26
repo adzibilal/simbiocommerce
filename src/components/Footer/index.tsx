@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 interface FooterStoreInfo {
   storeName: string | null;
@@ -240,9 +241,9 @@ const Footer = ({ storeInfo }: { storeInfo: FooterStoreInfo | null }) => {
                 </a>
               </li>
               <li>
-                <a className="ease-out duration-200 hover:text-blue" href="#">
+                <Link className="ease-out duration-200 hover:text-blue" href="/shop">
                   Shop
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -254,29 +255,29 @@ const Footer = ({ storeInfo }: { storeInfo: FooterStoreInfo | null }) => {
 
             <ul className="flex flex-col gap-3">
               <li>
-                <a className="ease-out duration-200 hover:text-blue" href="#">
+                <Link className="ease-out duration-200 hover:text-blue" href="/privacy-policy">
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a className="ease-out duration-200 hover:text-blue" href="#">
+                <Link className="ease-out duration-200 hover:text-blue" href="/refund-policy">
                   Refund Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a className="ease-out duration-200 hover:text-blue" href="#">
+                <Link className="ease-out duration-200 hover:text-blue" href="/terms-of-use">
                   Terms of Use
-                </a>
+                </Link>
               </li>
               <li>
-                <a className="ease-out duration-200 hover:text-blue" href="#">
+                <Link className="ease-out duration-200 hover:text-blue" href="/faqs">
                   FAQ’s
-                </a>
+                </Link>
               </li>
               <li>
-                <a className="ease-out duration-200 hover:text-blue" href="#">
+                <Link className="ease-out duration-200 hover:text-blue" href="/contact">
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

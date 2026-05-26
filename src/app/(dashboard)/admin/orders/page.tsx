@@ -4,6 +4,7 @@ export const metadata: Metadata = { title: "Orders" };
 import React from "react";
 import { getOrders } from "@/app/actions/order";
 import { formatCurrency } from "@/lib/currency";
+import Link from "next/link";
 
 const OrdersPage = async () => {
   const orders = await getOrders();
@@ -60,13 +61,10 @@ const OrdersPage = async () => {
                       {order.status || "Pending"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <button className="text-blue hover:text-blue-dark duration-200">
+                  <td className="px-6 py-4 text-right">
+                    <Link href={`/admin/orders/${order.id}`} className="text-blue hover:text-blue-dark duration-200 text-custom-sm">
                       View
-                    </button>
-                    <button className="text-red hover:text-red-dark duration-200">
-                      Delete
-                    </button>
+                    </Link>
                   </td>
                 </tr>
               ))}

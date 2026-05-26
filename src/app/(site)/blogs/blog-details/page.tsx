@@ -1,21 +1,5 @@
-import BlogDetails from "@/components/BlogDetails";
-import React from "react";
-import { generatePageMetadata } from "@/lib/metadata";
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-export async function generateMetadata(): Promise<Metadata> {
-  return generatePageMetadata("/blogs", {
-    title: "Blog | SimbioCommerce",
-    description: "Read our latest articles.",
-  });
+export default function BlogDetailsPage() {
+  redirect("/blogs");
 }
-
-const BlogDetailsPage = () => {
-  return (
-    <main>
-      <BlogDetails />
-    </main>
-  );
-};
-
-export default BlogDetailsPage;

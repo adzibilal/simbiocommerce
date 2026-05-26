@@ -53,7 +53,7 @@ const Dropdown = ({ menuItem, stickyMenu }) => {
                 pathUrl === item.path && "text-blue bg-gray-1"
               } `}
             >
-                {item.name}
+                {item.title}
             </Link>
           </li>
         ))}

@@ -10,7 +10,10 @@ export type Product = {
   sku?: string;
   slug: string;
   imageUrl?: string;
+  images?: string[];
   category?: string;
   createdAt?: string;
   updatedAt?: string;
+  avgRating?: number | null;
+  reviewCount?: number;
 };

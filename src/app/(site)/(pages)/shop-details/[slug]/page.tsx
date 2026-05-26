@@ -1,11 +1,13 @@
 import React from "react";
 import ShopDetails from "@/components/ShopDetails";
 import type { Metadata } from "next";
-import { getProductBySlug } from "@/app/actions/product";
+import { getProductBySlug, getProducts } from "@/app/actions/product";
+import { getProductReviews } from "@/app/actions/review";
 import { notFound } from "next/navigation";
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const product = await getProductBySlug(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
   if (!product) return { title: "Product | SimbioCommerce" };
   return {
     title: `${product.name} | SimbioCommerce`,
@@ -18,10 +20,21 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-const ShopDetailsPage = async ({ params }: { params: { slug: string } }) => {
+const ShopDetailsPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product) notFound();
+
+  const [reviews, allProducts] = await Promise.all([
+    getProductReviews(product.id),
+    getProducts(),
+  ]);
+
+  const relatedProducts = allProducts.filter((p) => p.id !== product.id && p.isActive !== false);
+
   return (
     <main>
-      <ShopDetails slug={params.slug} />
+      <ShopDetails product={product} reviews={reviews} relatedProducts={relatedProducts} />
     </main>
   );
 };

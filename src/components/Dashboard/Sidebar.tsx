@@ -129,6 +129,20 @@ const Sidebar = ({ storeInfo }: { storeInfo: StoreInfo | null }) => {
               </Link>
             </div>
 
+            {/* Contact Messages */}
+            <div className="flex flex-col gap-1">
+              <Link
+                className={`flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent ${pathname === "/admin/contact-messages" ? "bg-blue/10 text-blue" : ""}`}
+                href="/admin/contact-messages"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+                Contact Messages
+              </Link>
+            </div>
+
             {/* Homepage Content (Collapsible) */}
             <div className="flex flex-col gap-1">
               <button 
@@ -203,6 +217,10 @@ const Sidebar = ({ storeInfo }: { storeInfo: StoreInfo | null }) => {
                   <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/store-settings/payment">Payment Settings</Link>
                   <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/store-settings/courier">Courier Settings</Link>
                   <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/seo-settings">SEO Settings</Link>
+                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/privacy-policy">Privacy Policy</Link>
+                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/refund-policy">Refund Policy</Link>
+                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/terms-conditions">Terms of Use</Link>
+                  <Link className="flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent" href="/admin/faqs">FAQ's</Link>
                 </div>
               )}
             </div>
@@ -213,7 +231,7 @@ const Sidebar = ({ storeInfo }: { storeInfo: StoreInfo | null }) => {
         {/* Logout */}
         <div className="p-4 border-t border-gray-3">
           <Link
-            href="/login"
+            href="/signin"
             className="flex items-center px-4 py-3 text-custom-sm font-medium text-red hover:bg-red/5 rounded-lg duration-200"
           >
             <svg

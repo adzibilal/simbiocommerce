@@ -1,46 +1,65 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { calculateShippingCost } from "@/app/actions/shipping";
+import { formatCurrency } from "@/lib/currency";
+
+// Services not relevant for regular parcel e-commerce
+const HIDDEN_SERVICES = [
+  // JNE trucking
+  "JTR", "JTR<130", "JTR>130", "JTR>200",
+  // TIKI motor & trucking
+  "T60", "T25", "T15", "TRC", "TRX", "SRP",
+  // POS special cargo
+  "PAKETPOS DANGEROUS GOODS", "PAKETPOS VALUABLE GOODS", "POS KARGO", "PDG", "PVG", "PJB",
+];
 
 interface ShippingMethodProps {
+  originCity: number;
   destinationCity?: number;
   weight?: number;
   onShippingSelect?: (cost: number, courier: string, service: string) => void;
 }
 
-const ShippingMethod = ({ destinationCity, weight = 1000, onShippingSelect }: ShippingMethodProps) => {
+const ShippingMethod = ({ originCity, destinationCity, weight = 1000, onShippingSelect }: ShippingMethodProps) => {
   const [shippingMethod, setShippingMethod] = useState("");
   const [shippingOptions, setShippingOptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const originCity = 501;
 
   useEffect(() => {
-    const fetchShippingCosts = async () => {
-      if (!destinationCity) return;
+    if (!destinationCity) {
+      setShippingOptions([]);
+      setShippingMethod("");
+      return;
+    }
 
+    const fetchShippingCosts = async () => {
       setLoading(true);
-      const couriers = ["jne", "tiki", "pos"];
+      setShippingOptions([]);
+      setShippingMethod("");
+
+      const couriers = ["jne", "tiki", "pos", "sicepat", "jnt"];
       const allOptions: any[] = [];
 
       for (const courier of couriers) {
         const result = await calculateShippingCost({
           origin: originCity,
           destination: destinationCity,
-          weight: weight,
-          courier: courier,
+          weight,
+          courier,
         });
 
-        if (result.success && result.results[0]) {
-          const courierData = result.results[0];
-          courierData.costs.forEach((cost: any) => {
-            allOptions.push({
-              courier: courierData.code.toUpperCase(),
-              service: cost.service,
-              description: cost.description,
-              cost: cost.cost[0].value,
-              etd: cost.cost[0].etd,
+        if (result.success && Array.isArray(result.results)) {
+          result.results
+            .filter((item: any) => !HIDDEN_SERVICES.includes(item.service?.toUpperCase()))
+            .forEach((item: any) => {
+              allOptions.push({
+                courier: (item.code ?? courier).toUpperCase(),
+                service: item.service,
+                description: item.description,
+                cost: item.cost,
+                etd: item.etd,
+              });
             });
-          });
         }
       }
 
@@ -49,88 +68,64 @@ const ShippingMethod = ({ destinationCity, weight = 1000, onShippingSelect }: Sh
     };
 
     fetchShippingCosts();
-  }, [destinationCity, weight]);
+  }, [destinationCity, weight, originCity]);
 
   const handleSelectShipping = (option: any) => {
     const key = `${option.courier}-${option.service}`;
     setShippingMethod(key);
-    if (onShippingSelect) {
-      onShippingSelect(option.cost, option.courier, option.service);
-    }
+    onShippingSelect?.(option.cost, option.courier, option.service);
   };
 
+  if (!destinationCity) return null;
+
   return (
-    <div className="bg-white shadow-1 rounded-[10px] mt-7.5">
-      <div className="border-b border-gray-3 py-5 px-4 sm:px-8.5">
-        <h3 className="font-medium text-xl text-dark">Shipping Method</h3>
-      </div>
+    <div className="mt-5">
+      <h4 className="font-medium text-dark mb-3">Pilih Kurir & Layanan</h4>
 
-      <div className="p-4 sm:p-8.5">
-        {loading && (
-          <div className="text-center py-4">Loading shipping options...</div>
-        )}
+      {loading && (
+        <div className="flex items-center gap-2 text-sm text-dark-4 py-3">
+          <svg className="animate-spin h-4 w-4 text-blue" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Menghitung ongkir...
+        </div>
+      )}
 
-        {!loading && !destinationCity && (
-          <div className="text-center py-4 text-dark-4">
-            Please select destination city first
-          </div>
-        )}
+      {!loading && shippingOptions.length === 0 && (
+        <p className="text-sm text-dark-4 py-3">Tidak ada layanan pengiriman tersedia untuk tujuan ini.</p>
+      )}
 
-        {!loading && destinationCity && shippingOptions.length === 0 && (
-          <div className="text-center py-4 text-dark-4">
-            No shipping options available
-          </div>
-        )}
-
-        <div className="flex flex-col gap-4">
+      {!loading && shippingOptions.length > 0 && (
+        <div className="space-y-2">
           {shippingOptions.map((option, index) => {
             const key = `${option.courier}-${option.service}`;
             return (
               <label
                 key={index}
-                htmlFor={key}
-                className="flex cursor-pointer select-none items-center gap-3.5"
+                className={`flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-colors ${
+                  shippingMethod === key ? "border-blue bg-blue/5" : "border-gray-3 hover:border-gray-4"
+                }`}
               >
-                <div className="relative">
-                  <input
-                    type="radio"
-                    name="shipping"
-                    id={key}
-                    className="sr-only"
-                    onChange={() => handleSelectShipping(option)}
-                  />
-                  <div
-                    className={`flex h-4 w-4 items-center justify-center rounded-full ${
-                      shippingMethod === key
-                        ? "border-4 border-blue"
-                        : "border border-gray-4"
-                    }`}
-                  ></div>
+                <input
+                  type="radio"
+                  name="shipping"
+                  className="accent-blue"
+                  checked={shippingMethod === key}
+                  onChange={() => handleSelectShipping(option)}
+                />
+                <div className="flex-1">
+                  <p className="font-semibold text-dark text-sm">
+                    {option.courier} — {option.service}
+                  </p>
+                  <p className="text-xs text-dark-4">{option.description} · Est. {option.etd} hari</p>
                 </div>
-
-                <div className="rounded-md border-[0.5px] py-3.5 px-5 ease-out duration-200 hover:bg-gray-2 hover:border-transparent hover:shadow-none flex-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-dark">
-                        {option.courier} - {option.service}
-                      </p>
-                      <p className="text-custom-xs">{option.description}</p>
-                      <p className="text-custom-xs text-dark-4">
-                        Estimasi: {option.etd} hari
-                      </p>
-                    </div>
-                    <div className="pl-4">
-                      <p className="font-semibold text-dark">
-                        Rp {option.cost.toLocaleString("id-ID")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <p className="font-semibold text-dark text-sm shrink-0">{formatCurrency(option.cost)}</p>
               </label>
             );
           })}
         </div>
-      </div>
+      )}
     </div>
   );
 };

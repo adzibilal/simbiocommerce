@@ -6,6 +6,15 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcrypt";
 
+export async function getUserById(id: string) {
+  const result = await db
+    .select({ id: users.id, name: users.name, email: users.email, phone: users.phone, address: users.address })
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+  return result[0] ?? null;
+}
+
 export async function updateUserProfile(userId: string, data: {
   name?: string;
   phone?: string;
@@ -41,12 +50,11 @@ export async function registerUser(data: {
     const hashedPassword = await bcrypt.hash(data.password, 10);
     
     await db.insert(users).values({
+      id: crypto.randomUUID(),
       name: data.name,
       email: data.email,
       password: hashedPassword,
       role: "customer",
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
     
     return { success: true };

@@ -1,5 +1,6 @@
 import Contact from "@/components/Contact";
 import { generatePageMetadata } from "@/lib/metadata";
+import { getStoreInfo } from "@/app/actions/store-info";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -9,10 +10,11 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-const ContactPage = () => {
+const ContactPage = async () => {
+  const storeInfo = await getStoreInfo();
   return (
     <main>
-      <Contact />
+      <Contact storeInfo={storeInfo ? { email: storeInfo.email, phone: storeInfo.phone, address: storeInfo.address } : null} />
     </main>
   );
 };

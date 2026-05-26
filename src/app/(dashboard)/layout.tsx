@@ -12,7 +12,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { template: `%s | ${name} Admin`, default: `${name} Admin` },
     icons: {
-      icon: storeInfo?.faviconUrl || "/favicon.ico",
+      icon: [{ url: storeInfo?.faviconUrl || "/favicon.ico" }],
+      shortcut: [{ url: storeInfo?.faviconUrl || "/favicon.ico" }],
     },
   };
 }

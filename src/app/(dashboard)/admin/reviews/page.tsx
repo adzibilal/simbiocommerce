@@ -1,5 +1,6 @@
 import React from "react";
 import { getReviews } from "@/app/actions/review";
+import ReviewActions from "./ReviewActions";
 
 const ReviewsPage = async () => {
   const reviews = await getReviews();
@@ -22,6 +23,7 @@ const ReviewsPage = async () => {
                 <th className="px-6 py-4">Customer</th>
                 <th className="px-6 py-4">Rating</th>
                 <th className="px-6 py-4">Comment</th>
+                <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Date</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -35,26 +37,34 @@ const ReviewsPage = async () => {
                   <td className="px-6 py-4 text-custom-sm text-body">
                     {review.customer || "Unknown Customer"}
                   </td>
-                  <td className="px-6 py-4 text-custom-sm text-yellow flex items-center">
-                    {"★".repeat(review.rating || 0)}
-                    {"☆".repeat(5 - (review.rating || 0))}
+                  <td className="px-6 py-4 text-custom-sm text-yellow">
+                    {"★".repeat(review.rating || 0)}{"☆".repeat(5 - (review.rating || 0))}
                   </td>
                   <td className="px-6 py-4 text-custom-sm text-body max-w-xs truncate">
                     {review.comment}
                   </td>
-                  <td className="px-6 py-4 text-custom-sm text-body">
-                    {review.date}
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                      review.status === "approved" ? "bg-green/10 text-green" :
+                      review.status === "rejected" ? "bg-red/10 text-red" :
+                      "bg-yellow-100 text-yellow-700"
+                    }`}>
+                      {review.status ?? "pending"}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <button className="text-blue hover:text-blue-dark duration-200">
-                      Approve
-                    </button>
-                    <button className="text-red hover:text-red-dark duration-200">
-                      Delete
-                    </button>
+                  <td className="px-6 py-4 text-custom-sm text-body">
+                    {review.date ? new Date(review.date).toLocaleDateString("id-ID") : "-"}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <ReviewActions id={review.id} status={review.status ?? "pending"} />
                   </td>
                 </tr>
               ))}
+              {reviews.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-10 text-center text-body text-sm">No reviews yet.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

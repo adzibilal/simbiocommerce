@@ -11,6 +11,7 @@ import {
 } from "@/app/actions/countdown";
 import { getProducts } from "@/app/actions/product";
 import ModalPortal from "@/components/Dashboard/ModalPortal";
+import ImageCropUpload from "@/components/Dashboard/ImageCropUpload";
 
 interface CountdownItem {
   id: string;
@@ -346,13 +347,15 @@ const CountdownPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-custom-sm font-medium text-dark mb-1">Image URL</label>
-                  <input
-                    type="text"
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-3 rounded-lg focus:outline-none focus:border-blue text-custom-sm"
-                    placeholder="/images/countdown/countdown-01.png"
+                  <label className="block text-custom-sm font-medium text-dark mb-1">Image</label>
+                  <ImageCropUpload
+                    currentImageUrl={formData.imageUrl || undefined}
+                    onUploadComplete={(url) => setFormData((f) => ({ ...f, imageUrl: url }))}
+                    onRemove={() => setFormData((f) => ({ ...f, imageUrl: "" }))}
+                    folder="countdown"
+                    aspectRatio={1}
+                    allowAspectChange
+                    buttonText="Upload Image"
                   />
                 </div>
 

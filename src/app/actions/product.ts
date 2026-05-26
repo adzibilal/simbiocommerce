@@ -1,28 +1,52 @@
 "use server";
 
 import { db } from "@/db";
-import { products, categories, productImages } from "@/db/schema";
+import { products, categories, productImages, reviews } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import * as crypto from "crypto";
 
 export async function getProducts() {
-  return await db
-    .select({
-      id: products.id,
-      name: products.name,
-      slug: products.slug,
-      price: products.price,
-      stock: products.stock,
-      isActive: products.isActive,
-      category: categories.name,
-      sku: products.sku,
-      weight: products.weight,
-      imageUrl: productImages.imageUrl,
-    })
-    .from(products)
-    .leftJoin(categories, eq(products.categoryId, categories.id))
-    .leftJoin(productImages, and(eq(products.id, productImages.productId), eq(productImages.isPrimary, true)));
+  const [productsData, allImages, allReviews] = await Promise.all([
+    db
+      .select({
+        id: products.id,
+        name: products.name,
+        slug: products.slug,
+        price: products.price,
+        stock: products.stock,
+        isActive: products.isActive,
+        category: categories.name,
+        categoryId: products.categoryId,
+        sku: products.sku,
+        weight: products.weight,
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id)),
+    db.select().from(productImages),
+    db.select({
+      productId: reviews.productId,
+      rating: reviews.rating,
+    }).from(reviews).where(eq(reviews.status, "approved")),
+  ]);
+
+  return productsData.map((p) => {
+    const imgs = allImages
+      .filter((i) => i.productId === p.id)
+      .sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
+    const productReviews = allReviews.filter((r) => r.productId === p.id);
+    const reviewCount = productReviews.length;
+    const avgRating = reviewCount > 0
+      ? Math.round((productReviews.reduce((s, r) => s + r.rating, 0) / reviewCount) * 10) / 10
+      : null;
+    return {
+      ...p,
+      imageUrl: imgs.find((i) => i.isPrimary)?.imageUrl ?? imgs[0]?.imageUrl ?? undefined,
+      images: imgs.map((i) => i.imageUrl),
+      avgRating,
+      reviewCount,
+    };
+  });
 }
 
 export async function createProduct(
@@ -120,25 +144,38 @@ export async function getProductById(id: string) {
 }
 
 export async function getProductBySlug(slug: string) {
-  const result = await db
-    .select({
-      id: products.id,
-      name: products.name,
-      slug: products.slug,
-      price: products.price,
-      stock: products.stock,
-      weight: products.weight,
-      description: products.description,
-      isActive: products.isActive,
-      categoryId: products.categoryId,
-      sku: products.sku,
-      category: categories.name,
-      imageUrl: productImages.imageUrl,
-    })
-    .from(products)
-    .leftJoin(categories, eq(products.categoryId, categories.id))
-    .leftJoin(productImages, and(eq(products.id, productImages.productId), eq(productImages.isPrimary, true)))
-    .where(eq(products.slug, slug));
-  
-  return result[0] || null;
+  const [productData, allImages] = await Promise.all([
+    db
+      .select({
+        id: products.id,
+        name: products.name,
+        slug: products.slug,
+        price: products.price,
+        stock: products.stock,
+        weight: products.weight,
+        description: products.description,
+        isActive: products.isActive,
+        categoryId: products.categoryId,
+        sku: products.sku,
+        category: categories.name,
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .where(eq(products.slug, slug))
+      .limit(1),
+    db.select().from(productImages),
+  ]);
+
+  if (!productData[0]) return null;
+
+  const p = productData[0];
+  const imgs = allImages
+    .filter((i) => i.productId === p.id)
+    .sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
+
+  return {
+    ...p,
+    imageUrl: imgs.find((i) => i.isPrimary)?.imageUrl ?? imgs[0]?.imageUrl ?? undefined,
+    images: imgs.map((i) => i.imageUrl),
+  };
 }

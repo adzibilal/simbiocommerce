@@ -32,22 +32,22 @@ const SingleItem = ({ testimonial }: { testimonial: Testimonial }) => {
 
       <p className="text-dark mb-6">{testimonial.review}</p>
 
-      <a href="#" className="flex items-center gap-4">
-        <div className="w-12.5 h-12.5 rounded-full overflow-hidden">
-          <Image
-            src={testimonial.authorImg}
-            alt="author"
-            className="w-12.5 h-12.5 rounded-full overflow-hidden"
-            width={50}
-            height={50}
-          />
+      <div className="flex items-center gap-4">
+        <div className="w-12.5 h-12.5 rounded-full overflow-hidden bg-blue/10 flex items-center justify-center shrink-0">
+          {testimonial.authorImg && !testimonial.authorImg.startsWith("/images/users") ? (
+            <img src={testimonial.authorImg} alt={testimonial.authorName} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-blue font-semibold text-lg">
+              {testimonial.authorName.charAt(0).toUpperCase()}
+            </span>
+          )}
         </div>
 
         <div>
           <h3 className="font-medium text-dark">{testimonial.authorName}</h3>
           <p className="text-custom-sm">{testimonial.authorRole}</p>
         </div>
-      </a>
+      </div>
     </div>
   );
 };

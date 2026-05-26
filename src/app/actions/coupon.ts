@@ -27,6 +27,16 @@ export async function deleteCoupon(id: string) {
   revalidatePath("/admin/coupons");
 }
 
+export async function validateCoupon(code: string) {
+  const result = await db.select().from(coupons).where(eq(coupons.code, code.toUpperCase()));
+  const coupon = result[0];
+  if (!coupon) return { success: false, error: "Coupon not found" };
+  if (coupon.status !== "active") return { success: false, error: "Coupon is not active" };
+  const now = new Date();
+  if (coupon.expiry && new Date(coupon.expiry) < now) return { success: false, error: "Coupon has expired" };
+  return { success: true, coupon };
+}
+
 export async function updateCoupon(id: string, data: { code: string; discount: string; type: string; expiry: string; status?: string; maxUsage?: number }) {
   try {
     await db.update(coupons).set(data).where(eq(coupons.id, id));
