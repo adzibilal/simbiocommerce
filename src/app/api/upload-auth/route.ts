@@ -5,11 +5,11 @@ export async function GET() {
     privateKey: process.env.IMAGEKIT_PRIVATE_KEY as string,
     publicKey: process.env.IMAGEKIT_PUBLIC_KEY as string,
   })
-  
-  return Response.json({ 
-    token, 
-    expire, 
-    signature, 
+
+  return Response.json({
+    token,
+    expire,
+    signature,
     publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
     folder: process.env.IMAGEKIT_FOLDER || "simbiocommerce"
   })

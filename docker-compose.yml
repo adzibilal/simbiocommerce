@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXTAUTH_URL: ${NEXTAUTH_URL}
+        IMAGEKIT_PUBLIC_KEY: ${IMAGEKIT_PUBLIC_KEY}
+        IMAGEKIT_FOLDER: ${IMAGEKIT_FOLDER}
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      IMAGEKIT_PRIVATE_KEY: ${IMAGEKIT_PRIVATE_KEY}
+      IMAGEKIT_PUBLIC_KEY: ${IMAGEKIT_PUBLIC_KEY}
+      IMAGEKIT_FOLDER: ${IMAGEKIT_FOLDER}
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
