@@ -4,6 +4,7 @@ import { generatePageMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
 import { getPaymentSettings, getShippingOrigins } from "@/app/actions/store-settings";
 import { getUserById } from "@/app/actions/user";
+import { getSavedAddresses } from "@/app/actions/address";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -23,7 +24,9 @@ const CheckoutPage = async () => {
 
   const defaultOrigin = shippingOrigins.find((o) => o.isDefault && o.isActive) ?? shippingOrigins[0];
 
-  const userProfile = session?.user?.id ? await getUserById(session.user.id) : null;
+  const [userProfile, savedAddresses] = session?.user?.id
+    ? await Promise.all([getUserById(session.user.id), getSavedAddresses(session.user.id)])
+    : [null, []];
 
   return (
     <main>
@@ -31,6 +34,7 @@ const CheckoutPage = async () => {
         paymentSettings={paymentSettings}
         originCityId={defaultOrigin?.cityId ?? null}
         userProfile={userProfile}
+        savedAddresses={savedAddresses}
       />
     </main>
   );

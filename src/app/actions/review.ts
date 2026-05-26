@@ -2,24 +2,31 @@
 
 import { db } from "@/db";
 import { reviews, products, users } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { parseSchema, submitReviewSchema } from "@/lib/validation";
 
-export async function getReviews() {
-  return await db
-    .select({
-      id: reviews.id,
-      product: products.name,
-      customer: users.name,
-      rating: reviews.rating,
-      comment: reviews.comment,
-      date: reviews.date,
-      status: reviews.status,
-    })
-    .from(reviews)
-    .leftJoin(products, eq(reviews.productId, products.id))
-    .leftJoin(users, eq(reviews.customerId, users.id));
+export async function getReviews(page = 1, perPage = 20) {
+  const offset = (page - 1) * perPage;
+  const [data, totalRows] = await Promise.all([
+    db
+      .select({
+        id: reviews.id,
+        product: products.name,
+        customer: users.name,
+        rating: reviews.rating,
+        comment: reviews.comment,
+        date: reviews.date,
+        status: reviews.status,
+      })
+      .from(reviews)
+      .leftJoin(products, eq(reviews.productId, products.id))
+      .leftJoin(users, eq(reviews.customerId, users.id))
+      .limit(perPage)
+      .offset(offset),
+    db.select({ count: count() }).from(reviews),
+  ]);
+  return { data, total: totalRows[0].count };
 }
 
 export async function updateReviewStatus(id: string, status: string) {

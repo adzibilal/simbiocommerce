@@ -22,6 +22,17 @@ export const products = sqliteTable('products', {
   updatedAt: text('updated_at').$defaultFn(() => new Date().toISOString()),
 });
 
+export const stockHistory = sqliteTable('stock_history', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  productId: text('product_id').references(() => products.id),
+  previousStock: integer('previous_stock').notNull(),
+  newStock: integer('new_stock').notNull(),
+  change: integer('change').notNull(),
+  reason: text('reason'), // 'order', 'manual_update', 'bulk_update'
+  referenceId: text('reference_id'), // orderId jika dari order
+  changedAt: text('changed_at').$defaultFn(() => new Date().toISOString()),
+});
+
 export const productImages = sqliteTable('product_images', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   productId: text('product_id').references(() => products.id),
@@ -53,6 +64,24 @@ export const orders = sqliteTable('orders', {
   couponDiscount: integer('coupon_discount').notNull().default(0),
   grandTotal: integer('grand_total').notNull(),
   orderStatus: text('order_status').default('pending'),
+  notes: text('notes'),
+  guestEmail: text('guest_email'),
+  guestName: text('guest_name'),
+  guestPhone: text('guest_phone'),
+});
+
+export const savedAddresses = sqliteTable('saved_addresses', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  label: text('label').notNull(), // e.g. "Rumah", "Kantor"
+  recipientName: text('recipient_name').notNull(),
+  phone: text('phone').notNull(),
+  address: text('address').notNull(),
+  provinceId: integer('province_id'),
+  cityId: integer('city_id'),
+  postalCode: text('postal_code'),
+  isDefault: integer('is_default', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
 });
 
 export const orderItems = sqliteTable('order_items', {

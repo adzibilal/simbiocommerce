@@ -2,12 +2,13 @@
 
 import { db } from "@/db";
 import { products, categories, productImages, reviews } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import * as crypto from "crypto";
 
-export async function getProducts() {
-  const [productsData, allImages, allReviews] = await Promise.all([
+export async function getProducts(page = 1, perPage = 20) {
+  const offset = (page - 1) * perPage;
+  const [productsData, allImages, allReviews, totalRows] = await Promise.all([
     db
       .select({
         id: products.id,
@@ -22,15 +23,18 @@ export async function getProducts() {
         weight: products.weight,
       })
       .from(products)
-      .leftJoin(categories, eq(products.categoryId, categories.id)),
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .limit(perPage)
+      .offset(offset),
     db.select().from(productImages),
     db.select({
       productId: reviews.productId,
       rating: reviews.rating,
     }).from(reviews).where(eq(reviews.status, "approved")),
+    db.select({ count: count() }).from(products),
   ]);
 
-  return productsData.map((p) => {
+  const data = productsData.map((p) => {
     const imgs = allImages
       .filter((i) => i.productId === p.id)
       .sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0));
@@ -47,6 +51,8 @@ export async function getProducts() {
       reviewCount,
     };
   });
+
+  return { data, total: totalRows[0].count };
 }
 
 export async function createProduct(

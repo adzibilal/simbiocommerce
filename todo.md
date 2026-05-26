@@ -34,6 +34,11 @@
 - Transaction safety: createOrder atomic + rollback + race condition stock
 - Input validation & sanitasi dengan Zod (createOrder, updateProfile, register, contact, review)
 - Analytics: grafik penjualan 30 hari, produk terlaris, revenue summary, customer new vs returning, export CSV
+- Inventory: alert low stock (≤5), riwayat perubahan stok (audit trail), bulk update stok dari halaman /admin/inventory
+- Pagination admin: products, orders, customers, reviews
+- Guest checkout (tanpa harus login)
+- Simpan multiple shipping address per user
+- Tampilkan notes order di detail order customer (customer & admin)
 
 ---
 
@@ -44,23 +49,6 @@
 ---
 
 ## 🟡 Prioritas Medium
-
-
-### Inventory Management
-- [ ] Alert low stock (notifikasi admin jika stok < threshold)
-- [ ] Riwayat perubahan stok (audit trail)
-- [ ] Bulk update stok dari admin
-
-### Pagination Admin
-- [ ] Pagination di halaman admin/products
-- [ ] Pagination di halaman admin/orders
-- [ ] Pagination di halaman admin/customers
-- [ ] Pagination di halaman admin/reviews
-
-### Checkout Improvements
-- [ ] Guest checkout (tanpa harus login)
-- [ ] Simpan multiple shipping address per user
-- [ ] Tampilkan notes order di detail order customer
 
 ### Return / Refund Management
 - [ ] Flow pengajuan retur dari customer

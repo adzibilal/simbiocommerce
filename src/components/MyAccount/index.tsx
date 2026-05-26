@@ -3,8 +3,18 @@ import React, { useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import { formatCurrency } from "@/lib/currency";
 import { updateUserProfile } from "@/app/actions/user";
+import { saveSavedAddress, deleteSavedAddress, setDefaultAddress } from "@/app/actions/address";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+type SavedAddress = {
+  id: string;
+  label: string;
+  recipientName: string;
+  phone: string;
+  address: string;
+  isDefault: boolean | null;
+};
 
 type UserRow = {
   id: string;
@@ -30,6 +40,7 @@ type OrderRow = {
 interface Props {
   user: UserRow;
   orders: OrderRow[];
+  savedAddresses?: SavedAddress[];
 }
 
 const statusColor: Record<string, string> = {
@@ -61,9 +72,11 @@ const StatusBadge = ({ status }: { status: string | null }) => {
   );
 };
 
-const TABS = ["Overview", "Orders", "Profile"];
+const TABS = ["Overview", "Orders", "Addresses", "Profile"];
 
-const MyAccount = ({ user, orders }: Props) => {
+const EMPTY_ADDR = { label: "", recipientName: "", phone: "", address: "" };
+
+const MyAccount = ({ user, orders, savedAddresses: initialAddresses = [] }: Props) => {
   const router = useRouter();
   const [tab, setTab] = useState("Overview");
   const [profile, setProfile] = useState({
@@ -73,6 +86,10 @@ const MyAccount = ({ user, orders }: Props) => {
   });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const [addresses, setAddresses] = useState<SavedAddress[]>(initialAddresses);
+  const [showAddAddr, setShowAddAddr] = useState(false);
+  const [newAddr, setNewAddr] = useState(EMPTY_ADDR);
+  const [addrSaving, setAddrSaving] = useState(false);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +146,11 @@ const MyAccount = ({ user, orders }: Props) => {
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" />
                         <path d="M16 10a4 4 0 01-8 0" />
+                      </svg>
+                    )}
+                    {t === "Addresses" && (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" />
                       </svg>
                     )}
                     {t === "Profile" && (
@@ -241,6 +263,137 @@ const MyAccount = ({ user, orders }: Props) => {
                       </table>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Addresses tab */}
+              {tab === "Addresses" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium text-dark">Alamat Tersimpan</h3>
+                    <button
+                      onClick={() => { setShowAddAddr(true); setNewAddr(EMPTY_ADDR); }}
+                      className="text-sm font-medium text-blue hover:text-blue-dark flex items-center gap-1"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
+                      Tambah Alamat
+                    </button>
+                  </div>
+
+                  {showAddAddr && (
+                    <div className="bg-white rounded-xl shadow-1 p-6 space-y-4">
+                      <h4 className="font-medium text-dark">Alamat Baru</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-dark mb-1.5">Label <span className="text-red">*</span></label>
+                          <input
+                            type="text"
+                            placeholder="cth: Rumah, Kantor"
+                            value={newAddr.label}
+                            onChange={(e) => setNewAddr(a => ({ ...a, label: e.target.value }))}
+                            className={inputClass}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-dark mb-1.5">Nama Penerima <span className="text-red">*</span></label>
+                          <input
+                            type="text"
+                            placeholder="Nama lengkap penerima"
+                            value={newAddr.recipientName}
+                            onChange={(e) => setNewAddr(a => ({ ...a, recipientName: e.target.value }))}
+                            className={inputClass}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-dark mb-1.5">No. Telepon <span className="text-red">*</span></label>
+                          <input
+                            type="tel"
+                            placeholder="08xxxxxxxxxx"
+                            value={newAddr.phone}
+                            onChange={(e) => setNewAddr(a => ({ ...a, phone: e.target.value }))}
+                            className={inputClass}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-dark mb-1.5">Alamat Lengkap <span className="text-red">*</span></label>
+                          <textarea
+                            rows={2}
+                            placeholder="Jalan, kelurahan, kecamatan, kota, provinsi"
+                            value={newAddr.address}
+                            onChange={(e) => setNewAddr(a => ({ ...a, address: e.target.value }))}
+                            className={inputClass}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          disabled={addrSaving}
+                          onClick={async () => {
+                            if (!newAddr.label || !newAddr.recipientName || !newAddr.phone || !newAddr.address) return;
+                            setAddrSaving(true);
+                            await saveSavedAddress(user.id, { ...newAddr, isDefault: addresses.length === 0 });
+                            setAddresses(prev => [...prev, { id: crypto.randomUUID(), ...newAddr, isDefault: prev.length === 0 }]);
+                            setShowAddAddr(false);
+                            setAddrSaving(false);
+                            router.refresh();
+                          }}
+                          className="px-5 py-2.5 bg-blue text-white text-sm font-medium rounded-lg hover:bg-blue-dark disabled:opacity-60"
+                        >
+                          {addrSaving ? "Menyimpan..." : "Simpan"}
+                        </button>
+                        <button
+                          onClick={() => setShowAddAddr(false)}
+                          className="px-5 py-2.5 text-sm font-medium text-dark-4 hover:text-dark rounded-lg border border-gray-3 hover:border-gray-4"
+                        >
+                          Batal
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {addresses.length === 0 && !showAddAddr && (
+                    <div className="bg-white rounded-xl shadow-1 py-12 text-center text-dark-4 text-sm">
+                      Belum ada alamat tersimpan.
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {addresses.map((addr) => (
+                      <div key={addr.id} className="bg-white rounded-xl shadow-1 p-5">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold bg-blue/10 text-blue px-2 py-0.5 rounded-full">{addr.label}</span>
+                            {addr.isDefault && <span className="text-xs text-green font-medium">Default</span>}
+                          </div>
+                          <div className="flex gap-2">
+                            {!addr.isDefault && (
+                              <button
+                                onClick={async () => {
+                                  await setDefaultAddress(addr.id, user.id);
+                                  setAddresses(prev => prev.map(a => ({ ...a, isDefault: a.id === addr.id })));
+                                }}
+                                className="text-xs text-blue hover:underline"
+                              >
+                                Set Default
+                              </button>
+                            )}
+                            <button
+                              onClick={async () => {
+                                await deleteSavedAddress(addr.id, user.id);
+                                setAddresses(prev => prev.filter(a => a.id !== addr.id));
+                              }}
+                              className="text-xs text-red hover:underline"
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-sm font-medium text-dark">{addr.recipientName}</p>
+                        <p className="text-xs text-dark-4">{addr.phone}</p>
+                        <p className="text-xs text-dark-4 mt-1 line-clamp-2">{addr.address}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

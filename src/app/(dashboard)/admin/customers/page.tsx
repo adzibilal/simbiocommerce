@@ -3,9 +3,15 @@ export const metadata: Metadata = { title: "Customers" };
 
 import React from "react";
 import { getCustomers } from "@/app/actions/customer";
+import Pagination from "@/components/Dashboard/Pagination";
 
-const CustomersPage = async () => {
-  const customers = await getCustomers();
+const PER_PAGE = 20;
+
+const CustomersPage = async ({ searchParams }: { searchParams: Promise<{ page?: string }> }) => {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page ?? "1"));
+  const { data: customers, total } = await getCustomers(page, PER_PAGE);
+  const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
     <div className="space-y-6 font-euclid-circular-a">
@@ -70,6 +76,14 @@ const CustomersPage = async () => {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="border-t border-gray-2 px-6">
+          <div className="flex items-center justify-between py-3">
+            <p className="text-custom-xs text-body">
+              Showing {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, total)} of {total} customers
+            </p>
+            <Pagination currentPage={page} totalPages={totalPages} basePath="/admin/customers" />
+          </div>
         </div>
       </div>
     </div>

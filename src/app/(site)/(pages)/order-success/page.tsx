@@ -102,6 +102,12 @@ export default async function OrderSuccessPage({
                 <span className="font-mono font-semibold text-dark">{order.trackingNumber}</span>
               </div>
             )}
+            {order.notes && (
+              <div className="flex justify-between gap-4">
+                <span className="text-dark-4 shrink-0">Catatan</span>
+                <span className="text-dark text-right">{order.notes}</span>
+              </div>
+            )}
           </div>
 
           <div className="border-t border-gray-2 pt-4 space-y-3">

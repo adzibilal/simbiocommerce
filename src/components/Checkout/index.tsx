@@ -22,10 +22,23 @@ declare global {
   }
 }
 
+type SavedAddress = {
+  id: string;
+  label: string;
+  recipientName: string;
+  phone: string;
+  address: string;
+  provinceId: number | null;
+  cityId: number | null;
+  postalCode: string | null;
+  isDefault: boolean | null;
+};
+
 type Props = {
   paymentSettings: PaymentSettings | null;
   originCityId: number | null;
   userProfile?: { name?: string | null; email?: string | null; phone?: string | null; address?: string | null } | null;
+  savedAddresses?: SavedAddress[];
 };
 
 function CopyButton({ text }: { text: string }) {
@@ -56,7 +69,7 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-const Checkout = ({ paymentSettings, originCityId, userProfile }: Props) => {
+const Checkout = ({ paymentSettings, originCityId, userProfile, savedAddresses = [] }: Props) => {
   const { data: session } = useSession();
   const router = useRouter();
   const dispatch = useDispatch();
@@ -114,7 +127,6 @@ const Checkout = ({ paymentSettings, originCityId, userProfile }: Props) => {
   const grandTotal = totalPrice - couponDiscount + shippingCost;
 
   const validate = () => {
-    if (!session?.user?.id) { setError("Silakan login untuk melanjutkan checkout"); return false; }
     if (cartItems.length === 0) { setError("Keranjang belanja kosong"); return false; }
     if (!billing.name || !billing.email || !billing.phone || !billing.address) { setError("Lengkapi data diri terlebih dahulu"); return false; }
     if (!destination) { setError("Pilih tujuan pengiriman terlebih dahulu"); return false; }
@@ -146,7 +158,7 @@ const Checkout = ({ paymentSettings, originCityId, userProfile }: Props) => {
       const lastName = nameParts.slice(1).join(" ") || "";
 
       const result = await createOrder({
-        userId: session!.user!.id!,
+        userId: session?.user?.id ?? undefined,
         items: cartItems.map((item) => ({
           productId: item.id,
           quantity: item.quantity,
@@ -210,10 +222,38 @@ const Checkout = ({ paymentSettings, originCityId, userProfile }: Props) => {
               {/* Left column */}
               <div className="lg:max-w-[670px] w-full">
                 {!session && (
-                  <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5 mb-7.5 text-sm text-dark-4">
-                    Silakan{" "}
-                    <a href="/signin" className="text-blue underline">login</a>{" "}
-                    untuk menyelesaikan pesanan.
+                  <div className="bg-blue/5 border border-blue/20 rounded-[10px] p-4 mb-7.5 text-sm text-dark-4 flex items-center justify-between gap-4">
+                    <span>Sudah punya akun? Login untuk mengisi data otomatis.</span>
+                    <a href={`/signin?callbackUrl=/checkout`} className="shrink-0 text-blue font-medium hover:underline">Login</a>
+                  </div>
+                )}
+
+                {/* Saved address selector */}
+                {savedAddresses.length > 0 && (
+                  <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5 mb-7.5">
+                    <h3 className="font-medium text-dark mb-3">Alamat Tersimpan</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {savedAddresses.map((addr) => (
+                        <button
+                          key={addr.id}
+                          type="button"
+                          onClick={() => setBilling((prev) => ({
+                            ...prev,
+                            name: addr.recipientName,
+                            phone: addr.phone,
+                            address: addr.address,
+                          }))}
+                          className="text-left p-3 rounded-xl border-2 border-gray-3 hover:border-blue transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-semibold bg-blue/10 text-blue px-2 py-0.5 rounded-full">{addr.label}</span>
+                            {addr.isDefault && <span className="text-xs text-green font-medium">Default</span>}
+                          </div>
+                          <p className="text-sm font-medium text-dark">{addr.recipientName}</p>
+                          <p className="text-xs text-dark-4 truncate">{addr.address}</p>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 

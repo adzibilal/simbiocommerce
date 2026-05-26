@@ -1,9 +1,15 @@
 import React from "react";
 import { getReviews } from "@/app/actions/review";
 import ReviewActions from "./ReviewActions";
+import Pagination from "@/components/Dashboard/Pagination";
 
-const ReviewsPage = async () => {
-  const reviews = await getReviews();
+const PER_PAGE = 20;
+
+const ReviewsPage = async ({ searchParams }: { searchParams: Promise<{ page?: string }> }) => {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page ?? "1"));
+  const { data: reviews, total } = await getReviews(page, PER_PAGE);
+  const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
     <div className="space-y-6 font-euclid-circular-a">
@@ -67,6 +73,14 @@ const ReviewsPage = async () => {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="border-t border-gray-2 px-6">
+          <div className="flex items-center justify-between py-3">
+            <p className="text-custom-xs text-body">
+              Showing {total === 0 ? 0 : (page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, total)} of {total} reviews
+            </p>
+            <Pagination currentPage={page} totalPages={totalPages} basePath="/admin/reviews" />
+          </div>
         </div>
       </div>
     </div>

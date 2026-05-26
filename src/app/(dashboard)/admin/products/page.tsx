@@ -2,9 +2,15 @@ import React from "react";
 import ProductTable from "@/components/Dashboard/ProductTable";
 import { getProducts } from "@/app/actions/product";
 import Link from "next/link";
+import Pagination from "@/components/Dashboard/Pagination";
 
-const ProductsPage = async () => {
-  const products = await getProducts();
+const PER_PAGE = 20;
+
+const ProductsPage = async ({ searchParams }: { searchParams: Promise<{ page?: string }> }) => {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page ?? "1"));
+  const { data: products, total } = await getProducts(page, PER_PAGE);
+  const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
     <div className="space-y-6 font-euclid-circular-a">
@@ -36,6 +42,15 @@ const ProductsPage = async () => {
 
       {/* Product Table */}
       <ProductTable products={products} />
+
+      <div className="bg-white rounded-2xl shadow-1 border border-gray-2 px-6">
+        <div className="flex items-center justify-between py-3">
+          <p className="text-custom-xs text-body">
+            Showing {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, total)} of {total} products
+          </p>
+          <Pagination currentPage={page} totalPages={totalPages} basePath="/admin/products" />
+        </div>
+      </div>
     </div>
   );
 };

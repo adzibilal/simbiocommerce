@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { orders, users, orderItems as orderItemsTable, products, payments, shipping, productImages } from "@/db/schema";
-import { eq, and, gte, sql } from "drizzle-orm";
+import { orders, users, orderItems as orderItemsTable, products, payments, shipping, productImages, stockHistory } from "@/db/schema";
+import { eq, and, gte, sql, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import * as crypto from "crypto";
@@ -11,17 +11,24 @@ import { sendOrderConfirmation, sendNewOrderNotification, sendOrderStatusUpdate,
 import { getStoreInfo } from "./store-info";
 import { parseSchema, createOrderSchema } from "@/lib/validation";
 
-export async function getOrders() {
-  return await db
-    .select({
-      id: orders.id,
-      customer: users.name,
-      date: orders.orderDate,
-      total: orders.grandTotal,
-      status: orders.orderStatus,
-    })
-    .from(orders)
-    .leftJoin(users, eq(orders.userId, users.id));
+export async function getOrders(page = 1, perPage = 20) {
+  const offset = (page - 1) * perPage;
+  const [data, totalRows] = await Promise.all([
+    db
+      .select({
+        id: orders.id,
+        customer: users.name,
+        date: orders.orderDate,
+        total: orders.grandTotal,
+        status: orders.orderStatus,
+      })
+      .from(orders)
+      .leftJoin(users, eq(orders.userId, users.id))
+      .limit(perPage)
+      .offset(offset),
+    db.select({ count: count() }).from(orders),
+  ]);
+  return { data, total: totalRows[0].count };
 }
 
 export async function getOrdersByUser(userId: string) {
@@ -68,6 +75,9 @@ export async function getOrderDetail(orderId: string) {
       couponDiscount: orders.couponDiscount,
       grandTotal: orders.grandTotal,
       orderStatus: orders.orderStatus,
+      notes: orders.notes,
+      guestEmail: orders.guestEmail,
+      guestName: orders.guestName,
       courierCode: shipping.courierCode,
       courierService: shipping.courierService,
       trackingNumber: shipping.trackingNumber,
@@ -196,7 +206,7 @@ export async function updateTrackingNumber(orderId: string, trackingNumber: stri
 
 export async function createOrder(
   orderData: {
-    userId: string;
+    userId?: string;
     items: Array<{
       productId: string;
       quantity: number;
@@ -260,18 +270,32 @@ export async function createOrder(
         // Verifikasi update berhasil (guard tambahan)
         const updated = tx.select({ stock: products.stock }).from(products).where(eq(products.id, item.productId)).get();
         if (!updated || updated.stock < 0) throw new Error(`Stok ${product.name} habis`);
+
+        // Catat riwayat stok
+        tx.insert(stockHistory).values({
+          productId: item.productId,
+          previousStock: product.stock,
+          newStock: updated.stock,
+          change: -item.quantity,
+          reason: "order",
+          referenceId: orderId,
+        }).run();
       }
 
       // Insert order
       tx.insert(orders).values({
         id: orderId,
-        userId: orderData.userId,
+        userId: orderData.userId ?? null,
         orderDate: new Date().toISOString(),
         totalProductPrice,
         totalShippingCost: orderData.shippingData.shippingCost,
         couponDiscount,
         grandTotal,
         orderStatus: "pending",
+        notes: orderData.notes ?? null,
+        guestEmail: !orderData.userId ? orderData.customerDetails.email : null,
+        guestName: !orderData.userId ? `${orderData.customerDetails.firstName} ${orderData.customerDetails.lastName ?? ""}`.trim() : null,
+        guestPhone: !orderData.userId ? orderData.customerDetails.phone : null,
       }).run();
 
       // Insert order items

@@ -71,6 +71,20 @@ const Sidebar = ({ storeInfo }: { storeInfo: StoreInfo | null }) => {
               </Link>
             </div>
 
+            {/* Inventory */}
+            <div className="flex flex-col gap-1">
+              <Link
+                className={`flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent ${pathname === "/admin/inventory" ? "bg-blue/10 text-blue" : ""}`}
+                href="/admin/inventory"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+                Inventory
+              </Link>
+            </div>
+
             {/* Analytics */}
             <div className="flex flex-col gap-1">
               <Link

@@ -92,6 +92,22 @@ export default async function AdminOrderDetailPage({
             </div>
           </div>
 
+          {/* Notes */}
+          {order.notes && (
+            <div className="bg-white rounded-2xl shadow-1 border border-gray-2 px-6 py-4">
+              <h2 className="font-semibold text-dark mb-2">Catatan Pesanan</h2>
+              <p className="text-sm text-body">{order.notes}</p>
+            </div>
+          )}
+
+          {/* Guest info */}
+          {order.guestName && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl px-6 py-4 text-sm space-y-1">
+              <p className="font-medium text-yellow-700">Pesanan dari Guest</p>
+              <p className="text-dark-4">{order.guestName} · {order.guestEmail}</p>
+            </div>
+          )}
+
           {/* Shipping */}
           <div className="bg-white rounded-2xl shadow-1 border border-gray-2">
             <div className="px-6 py-4 border-b border-gray-2">
