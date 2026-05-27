@@ -11,6 +11,12 @@ import { getOrderReviews } from "@/app/actions/review";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
+export const dynamic = "force-dynamic";
+
+function isRemoteImage(url: string) {
+  return url.startsWith("http://") || url.startsWith("https://");
+}
+
 export default async function OrderSuccessPage({
   searchParams,
 }: {
@@ -121,7 +127,14 @@ export default async function OrderSuccessPage({
               <div key={i} className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-2 border border-gray-3 shrink-0">
                   {item.imageUrl ? (
-                    <Image src={item.imageUrl} alt={item.productName ?? ""} width={48} height={48} className="w-full h-full object-cover" />
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.productName ?? ""}
+                      width={48}
+                      height={48}
+                      className="w-full h-full object-cover"
+                      unoptimized={isRemoteImage(item.imageUrl)}
+                    />
                   ) : (
                     <div className="w-full h-full bg-gray-2" />
                   )}
@@ -202,7 +215,14 @@ export default async function OrderSuccessPage({
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-2 border border-gray-3 shrink-0">
                         {item.imageUrl ? (
-                          <Image src={item.imageUrl} alt={item.productName ?? ""} width={40} height={40} className="w-full h-full object-cover" />
+                          <Image
+                            src={item.imageUrl}
+                            alt={item.productName ?? ""}
+                            width={40}
+                            height={40}
+                            className="w-full h-full object-cover"
+                            unoptimized={isRemoteImage(item.imageUrl)}
+                          />
                         ) : (
                           <div className="w-full h-full bg-gray-2" />
                         )}

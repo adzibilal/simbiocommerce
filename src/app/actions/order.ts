@@ -445,9 +445,6 @@ export async function syncPaymentStatus(orderId: string) {
     } else if (paymentStatus === "failed") {
       await db.update(orders).set({ orderStatus: "cancelled" }).where(eq(orders.id, orderId));
     }
-
-    revalidatePath(`/order-success`);
-    revalidatePath(`/admin/orders`);
   } catch (error) {
     console.error("syncPaymentStatus error:", error);
   }
