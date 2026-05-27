@@ -9,7 +9,7 @@ interface StoreInfo {
   logoUrl: string | null;
 }
 
-const Sidebar = ({ storeInfo }: { storeInfo: StoreInfo | null }) => {
+const Sidebar = ({ storeInfo = null }: { storeInfo?: StoreInfo | null }) => {
   const pathname = usePathname();
   // Accordion tertutup secara default
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});

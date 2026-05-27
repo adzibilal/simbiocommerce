@@ -71,7 +71,6 @@ export default async function StoreSettingsPage() {
             },
           ]}
         />
-      </div>
 
         <SettingsCard
           title="Email Settings"
