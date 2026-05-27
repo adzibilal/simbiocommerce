@@ -122,9 +122,10 @@ const CounDown = ({ data }: { data: CountdownData | null }) => {
             <Image
               src={data.imageUrl}
               alt="product"
-              className="hidden lg:block absolute right-4 xl:right-33 bottom-4 xl:bottom-10 -z-1"
+              className="hidden lg:block absolute right-4 xl:right-33 bottom-4 xl:bottom-10 -z-1 object-contain"
               width={411}
               height={376}
+              unoptimized
             />
           )}
         </div>

@@ -355,6 +355,7 @@ const CountdownPage = () => {
                     folder="countdown"
                     aspectRatio={1}
                     allowAspectChange
+                    preserveTransparency
                     buttonText="Upload Image"
                   />
                 </div>

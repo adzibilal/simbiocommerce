@@ -44,6 +44,15 @@ describe("createOrderSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("valid — productId legacy non-UUID (migrated data)", () => {
+    const data = {
+      ...validOrderData,
+      items: [{ ...validOrderData.items[0], productId: "1" }],
+    };
+    const result = createOrderSchema.safeParse(data);
+    expect(result.success).toBe(true);
+  });
+
   it("valid — userId optional (guest checkout)", () => {
     const result = createOrderSchema.safeParse(validOrderData);
     expect(result.success).toBe(true);

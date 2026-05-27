@@ -8,6 +8,14 @@ const sanitizeString = (s: string) =>
 const sanitized = (schema: z.ZodString) =>
   schema.transform(sanitizeString);
 
+// DB primary keys are text — not always RFC UUID (e.g. migrated legacy ids like "1")
+const idSchema = z.string().trim().min(1, "ID tidak valid");
+
+const optionalIdSchema = z.preprocess(
+  (val) => (val === "" || val === null || val === undefined ? undefined : val),
+  idSchema.optional()
+);
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export const registerSchema = z.object({
@@ -26,9 +34,9 @@ export const billingSchema = z.object({
 });
 
 export const createOrderSchema = z.object({
-  userId: z.string().uuid().optional(),
+  userId: optionalIdSchema,
   items: z.array(z.object({
-    productId: z.string().uuid(),
+    productId: idSchema,
     quantity: z.number().int().min(1).max(1000),
     unitPrice: z.number().int().min(0),
     weight: z.number().min(0),
@@ -80,9 +88,9 @@ export const contactSchema = z.object({
 // ─── Review ──────────────────────────────────────────────────────────────────
 
 export const submitReviewSchema = z.object({
-  productId: z.string().uuid(),
-  orderId: z.string().uuid(),
-  customerId: z.string().uuid(),
+  productId: idSchema,
+  orderId: idSchema,
+  customerId: idSchema,
   rating: z.number().int().min(1).max(5),
   comment: sanitized(z.string().min(3, "Ulasan terlalu pendek").max(1000)),
   imageUrl: z.string().url().max(500).optional(),

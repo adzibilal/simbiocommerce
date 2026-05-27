@@ -388,6 +388,7 @@ const PromoBannerPage = () => {
                     folder="promo-banners"
                     aspectRatio={16 / 9}
                     allowAspectChange
+                    preserveTransparency
                     buttonText="Upload Image"
                   />
                 </div>

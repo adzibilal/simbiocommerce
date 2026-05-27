@@ -71,9 +71,10 @@ const PromoBanner = async () => {
               <Image
                 src={big.imageUrl}
                 alt="promo img"
-                className="absolute bottom-0 right-4 lg:right-26 -z-1"
+                className="absolute bottom-0 right-4 lg:right-26 -z-1 object-contain"
                 width={274}
                 height={350}
+                unoptimized
               />
             )}
           </div>
@@ -90,9 +91,10 @@ const PromoBanner = async () => {
                   <Image
                     src={smallLeft.imageUrl}
                     alt="promo img"
-                    className="absolute top-1/2 -translate-y-1/2 left-3 sm:left-10 -z-1"
+                    className="absolute top-1/2 -translate-y-1/2 left-3 sm:left-10 -z-1 object-contain"
                     width={241}
                     height={241}
+                    unoptimized
                   />
                 )}
                 <div className="text-right">
@@ -127,9 +129,10 @@ const PromoBanner = async () => {
                   <Image
                     src={smallRight.imageUrl}
                     alt="promo img"
-                    className="absolute top-1/2 -translate-y-1/2 right-3 sm:right-8.5 -z-1"
+                    className="absolute top-1/2 -translate-y-1/2 right-3 sm:right-8.5 -z-1 object-contain"
                     width={200}
                     height={200}
+                    unoptimized
                   />
                 )}
                 <div>

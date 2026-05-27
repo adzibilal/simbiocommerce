@@ -7,6 +7,35 @@ import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-im
 import "react-image-crop/dist/ReactCrop.css";
 import ModalPortal from "./ModalPortal";
 
+function isPngSource(file: File, dataUrl?: string): boolean {
+  if (file.type === "image/png") return true;
+  if (file.name.toLowerCase().endsWith(".png")) return true;
+  if (dataUrl?.startsWith("data:image/png")) return true;
+  return false;
+}
+
+function imageHasTransparency(image: HTMLImageElement): boolean {
+  const width = image.naturalWidth;
+  const height = image.naturalHeight;
+  if (width === 0 || height === 0) return false;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return false;
+
+  ctx.drawImage(image, 0, 0);
+  const { data } = ctx.getImageData(0, 0, width, height);
+
+  for (let i = 3; i < data.length; i += 16) {
+    if (data[i] < 255) return true;
+  }
+
+  return false;
+}
+
 interface ImageCropUploadProps {
   onUploadComplete: (imageUrl: string) => void;
   aspectRatio?: number; // e.g., 16/9, 1, 4/3, etc.
@@ -20,6 +49,7 @@ interface ImageCropUploadProps {
   previewClassName?: string;
   currentImageUrl?: string;
   onRemove?: () => void;
+  preserveTransparency?: boolean;
 }
 
 // Helper function to get cropped image
@@ -40,7 +70,7 @@ function getCroppedImg(image: HTMLImageElement, crop: PixelCrop, isPng = false):
   canvas.width = cropWidth;
   canvas.height = cropHeight;
 
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { alpha: true });
   if (!ctx) {
     return Promise.reject(new Error("Failed to get canvas context"));
   }
@@ -49,8 +79,10 @@ function getCroppedImg(image: HTMLImageElement, crop: PixelCrop, isPng = false):
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
-  // For non-PNG formats fill white background to avoid black where transparency was
-  if (!isPng) {
+  if (isPng) {
+    ctx.clearRect(0, 0, cropWidth, cropHeight);
+  } else {
+    // For non-PNG formats fill white background to avoid black where transparency was
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, cropWidth, cropHeight);
   }
@@ -95,9 +127,12 @@ const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
   previewClassName = "",
   currentImageUrl,
   onRemove,
+  preserveTransparency = false,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const isPngRef = useRef(false);
+  const hasAlphaRef = useRef(false);
 
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState("");
@@ -106,7 +141,6 @@ const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
   const [aspect, setAspect] = useState<number | undefined>(aspectRatio);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [isPng, setIsPng] = useState(false);
 
   const onFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,11 +153,12 @@ const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
           return;
         }
 
-        setIsPng(file.type === "image/png");
-
         const reader = new FileReader();
         reader.addEventListener("load", () => {
-          setTempImageSrc(reader.result as string);
+          const dataUrl = reader.result as string;
+          const png = isPngSource(file, dataUrl);
+          isPngRef.current = png;
+          setTempImageSrc(dataUrl);
           setIsCropModalOpen(true);
         });
         reader.readAsDataURL(file);
@@ -134,7 +169,10 @@ const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
 
   const onImageLoad = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
-      const { width, height } = e.currentTarget;
+      const image = e.currentTarget;
+      hasAlphaRef.current = imageHasTransparency(image);
+
+      const { width, height } = image;
       const initialCrop = centerCrop(
         makeAspectCrop(
           {
@@ -156,15 +194,22 @@ const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
   const handleCropAndUpload = useCallback(async () => {
     if (!completedCrop || !imgRef.current) return;
 
+    const imageElement = imgRef.current;
+    const shouldPreservePng =
+      preserveTransparency ||
+      isPngRef.current ||
+      hasAlphaRef.current ||
+      tempImageSrc.startsWith("data:image/png");
+
     setUploading(true);
-    setIsCropModalOpen(false);
     toast.loading("Uploading image...", { id: "upload-toast" });
 
     try {
-      // Get cropped image as blob
-      const blob = await getCroppedImg(imgRef.current, completedCrop, isPng);
-      const ext = isPng ? "png" : "jpg";
-      const mimeType = isPng ? "image/png" : "image/jpeg";
+      const blob = await getCroppedImg(imageElement, completedCrop, shouldPreservePng);
+      setIsCropModalOpen(false);
+
+      const ext = shouldPreservePng ? "png" : "jpg";
+      const mimeType = shouldPreservePng ? "image/png" : "image/jpeg";
       const file = new File([blob], `cropped-image.${ext}`, { type: mimeType });
 
       // Get auth params
@@ -199,10 +244,12 @@ const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
       setTempImageSrc("");
       setCrop(undefined);
       setCompletedCrop(undefined);
+      isPngRef.current = false;
+      hasAlphaRef.current = false;
       // Reset file input
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  }, [completedCrop, folder, onUploadComplete]);
+  }, [completedCrop, folder, onUploadComplete, preserveTransparency, tempImageSrc]);
 
   const handleRemove = useCallback(() => {
     if (onRemove) {
@@ -224,11 +271,20 @@ const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
     <div className={className}>
       {/* Preview of current image */}
       {currentImageUrl && (
-        <div className={`relative rounded-lg overflow-hidden border border-gray-3 ${previewClassName}`}>
+        <div
+          className={`relative rounded-lg overflow-hidden border border-gray-3 ${previewClassName}`}
+          style={{
+            backgroundImage:
+              "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)",
+            backgroundSize: "16px 16px",
+            backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+            backgroundColor: "#f9fafb",
+          }}
+        >
           <img
             src={currentImageUrl}
             alt="Uploaded"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
           {onRemove && (
             <button
@@ -306,6 +362,8 @@ const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
                 onClick={() => {
                   setIsCropModalOpen(false);
                   setTempImageSrc("");
+                  isPngRef.current = false;
+                  hasAlphaRef.current = false;
                   if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
                 className="text-body hover:text-dark"
@@ -368,6 +426,8 @@ const ImageCropUpload: React.FC<ImageCropUploadProps> = ({
                 onClick={() => {
                   setIsCropModalOpen(false);
                   setTempImageSrc("");
+                  isPngRef.current = false;
+                  hasAlphaRef.current = false;
                   if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
                 className="px-5 py-2.5 bg-gray-2 text-dark font-medium rounded-lg hover:bg-gray-3 duration-200"
