@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import StatCards from "@/components/Dashboard/StatCards";
+import DailyOmsetBreakdown from "@/components/Dashboard/DailyOmsetBreakdown";
 import { getRecentOrders, getTopProducts } from "@/app/actions/dashboard";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
@@ -54,6 +55,9 @@ const DashboardHome = () => {
 
       {/* Stat Cards */}
       <StatCards />
+
+      {/* Daily Omset Breakdown */}
+      <DailyOmsetBreakdown />
 
       {/* Recent Activity / Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

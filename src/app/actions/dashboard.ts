@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { orders, users, products } from "@/db/schema";
-import { sql, count, sum, eq } from "drizzle-orm";
+import { sql, count, sum, eq, gte, lte, and } from "drizzle-orm";
 
 export async function getDashboardStats() {
   try {
@@ -90,6 +90,76 @@ export async function getTopProducts(limit: number = 5) {
     };
   } catch (error: any) {
     console.error("Failed to fetch top products:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
+export async function getOmsetBreakdown(startDate?: string, endDate?: string) {
+  try {
+    let startISO: string;
+    let endISO: string;
+
+    const now = new Date();
+
+    if (startDate) {
+      startISO = new Date(startDate + "T00:00:00").toISOString();
+    } else {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      startISO = startOfMonth.toISOString();
+    }
+
+    if (endDate) {
+      endISO = new Date(endDate + "T23:59:59.999").toISOString();
+    } else {
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      endISO = endOfToday.toISOString();
+    }
+
+    const todayOrders = await db
+      .select({
+        id: orders.id,
+        grandTotal: orders.grandTotal,
+        orderStatus: orders.orderStatus,
+      })
+      .from(orders)
+      .where(and(gte(orders.orderDate, startISO), lte(orders.orderDate, endISO)));
+
+    const breakdown = {
+      pending: { revenue: 0, count: 0 },
+      processing: { revenue: 0, count: 0 },
+      shipped: { revenue: 0, count: 0 },
+      delivered: { revenue: 0, count: 0 },
+      cancelled: { revenue: 0, count: 0 },
+    };
+
+    let totalRevenue = 0;
+    let totalCount = 0;
+
+    for (const order of todayOrders) {
+      const status = (order.orderStatus || "pending") as keyof typeof breakdown;
+      if (breakdown[status]) {
+        breakdown[status].revenue += order.grandTotal || 0;
+        breakdown[status].count += 1;
+
+        if (status !== "cancelled") {
+          totalRevenue += order.grandTotal || 0;
+          totalCount += 1;
+        }
+      }
+    }
+
+    return {
+      success: true,
+      stats: {
+        total: { revenue: totalRevenue, count: totalCount },
+        breakdown,
+      },
+    };
+  } catch (error: any) {
+    console.error("Failed to fetch omset breakdown:", error);
     return {
       success: false,
       error: error.message,
