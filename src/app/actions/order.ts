@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { orders, users, orderItems as orderItemsTable, products, payments, shipping, productImages, stockHistory } from "@/db/schema";
-import { eq, and, gte, count } from "drizzle-orm";
+import { eq, and, gte, lte, count, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import * as crypto from "crypto";
@@ -11,8 +11,17 @@ import { sendOrderConfirmation, sendNewOrderNotification, sendOrderStatusUpdate,
 import { getStoreInfo } from "./store-info";
 import { parseSchema, createOrderSchema } from "@/lib/validation";
 
-export async function getOrders(page = 1, perPage = 20) {
+export async function getOrders(page = 1, perPage = 20, startDate?: string, endDate?: string) {
   const offset = (page - 1) * perPage;
+  const conditions = [];
+  if (startDate) {
+    conditions.push(gte(orders.orderDate, startDate));
+  }
+  if (endDate) {
+    conditions.push(lte(orders.orderDate, endDate));
+  }
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
   const [data, totalRows] = await Promise.all([
     db
       .select({
@@ -24,11 +33,107 @@ export async function getOrders(page = 1, perPage = 20) {
       })
       .from(orders)
       .leftJoin(users, eq(orders.userId, users.id))
+      .where(whereClause)
       .limit(perPage)
       .offset(offset),
-    db.select({ count: count() }).from(orders),
+    db.select({ count: count() }).from(orders).where(whereClause),
   ]);
   return { data, total: totalRows[0].count };
+}
+
+export async function bulkUpdateOrderStatus(params: {
+  ids?: string[];
+  dateRange?: { start: string; end: string };
+  status: string;
+}) {
+  const { ids, dateRange, status } = params;
+
+  try {
+    let condition;
+    if (ids && ids.length > 0) {
+      condition = inArray(orders.id, ids);
+    } else if (dateRange && dateRange.start && dateRange.end) {
+      condition = and(
+        gte(orders.orderDate, dateRange.start),
+        lte(orders.orderDate, dateRange.end)
+      );
+    } else {
+      return { success: false, error: "No orders or date range selected" };
+    }
+
+    // Perform bulk update on orders
+    await db
+      .update(orders)
+      .set({ orderStatus: status })
+      .where(condition);
+
+    // If status is "shipped" or "delivered", synchronize the shippingStatus column
+    if (status === "shipped" || status === "delivered") {
+      const updatedOrders = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(condition);
+
+      const updatedIds = updatedOrders.map((o) => o.id);
+      
+      if (updatedIds.length > 0) {
+        if (status === "shipped") {
+          await db
+            .update(shipping)
+            .set({ shippingStatus: "shipped" })
+            .where(inArray(shipping.orderId, updatedIds));
+        } else if (status === "delivered") {
+          await db
+            .update(shipping)
+            .set({
+              shippingStatus: "delivered",
+              shippingDate: new Date().toISOString(),
+            })
+            .where(inArray(shipping.orderId, updatedIds));
+        }
+      }
+    }
+
+    // Revalidate path
+    revalidatePath("/admin/orders");
+
+    // Asynchronously send notification emails to customers
+    const ordersWithUsers = await db
+      .select({
+        id: orders.id,
+        email: users.email,
+        name: users.name,
+        trackingNumber: shipping.trackingNumber,
+        courierCode: shipping.courierCode,
+      })
+      .from(orders)
+      .leftJoin(users, eq(orders.userId, users.id))
+      .leftJoin(shipping, eq(shipping.orderId, orders.id))
+      .where(condition);
+
+    after(async () => {
+      const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+      for (const row of ordersWithUsers) {
+        if (row.email) {
+          sendOrderStatusUpdate({
+            to: row.email,
+            customerName: row.name ?? "Customer",
+            orderId: row.id,
+            newStatus: status,
+            trackingNumber: row.trackingNumber ?? undefined,
+            courierCode: row.courierCode ?? undefined,
+            orderUrl: `${baseUrl}/order-success?orderId=${row.id}`,
+          }).catch(console.error);
+        }
+        revalidatePath(`/admin/orders/${row.id}`);
+      }
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("bulkUpdateOrderStatus error:", error);
+    return { success: false, error: error.message || "Failed to update orders" };
+  }
 }
 
 export async function getOrdersByUser(userId: string) {

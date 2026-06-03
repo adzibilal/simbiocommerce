@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 interface PaginationProps {
   currentPage: number;
@@ -7,11 +10,16 @@ interface PaginationProps {
 }
 
 export default function Pagination({ currentPage, totalPages, basePath }: PaginationProps) {
+  const searchParams = useSearchParams();
   if (totalPages <= 1) return null;
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
-  const getHref = (page: number) => `${basePath}?page=${page}`;
+  const getHref = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(page));
+    return `${basePath}?${params.toString()}`;
+  };
 
   return (
     <div className="flex items-center justify-center gap-1 py-4">
