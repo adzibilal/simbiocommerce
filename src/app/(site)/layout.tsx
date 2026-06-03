@@ -5,6 +5,9 @@ import { getStoreInfo } from "@/app/actions/store-info";
 import { buildPrimaryColorStyle } from "@/lib/color-utils";
 import type { Metadata } from "next";
 
+import CustomerChatWidget from "@/components/Chat/CustomerChatWidget";
+import ServiceWorkerRegister from "@/components/Notification/ServiceWorkerRegister";
+
 export async function generateMetadata(): Promise<Metadata> {
   const storeInfo = await getStoreInfo();
   const iconUrl = storeInfo?.faviconUrl || "/favicon.ico";
@@ -33,6 +36,8 @@ export default async function RootLayout({
       <body>
         <ClientLayout storeInfo={storeInfo}>
           {children}
+          <ServiceWorkerRegister />
+          <CustomerChatWidget />
         </ClientLayout>
       </body>
     </html>

@@ -368,3 +368,21 @@ export const settingsAuditLog = pgTable('settings_audit_log', {
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
 });
+
+export const chatMessages = pgTable('chat_messages', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  customerId: text('customer_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  senderId: text('sender_id').references(() => users.id, { onDelete: 'set null' }),
+  senderType: text('sender_type').notNull(), // 'customer' | 'admin'
+  message: text('message').notNull(),
+  messageType: text('message_type').notNull().default('text'), // 'text' | 'product_card' | 'order_info'
+  isAiReply: boolean('is_ai_reply').notNull().default(false),
+  isRead: boolean('is_read').notNull().default(false),
+  createdAt: text('created_at').$defaultFn(() => new Date().toISOString()),
+});
+
+export const chatSessionSettings = pgTable('chat_session_settings', {
+  customerId: text('customer_id').notNull().primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  aiEnabled: boolean('ai_enabled').notNull().default(true),
+  updatedAt: text('updated_at').$defaultFn(() => new Date().toISOString()),
+});

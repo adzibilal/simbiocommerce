@@ -2,6 +2,7 @@ import "../css/euclid-circular-a-font.css";
 import "../css/style.css";
 import AuthProvider from "@/app/context/AuthProvider";
 import { Toaster } from "react-hot-toast";
+import ServiceWorkerRegister from "@/components/Notification/ServiceWorkerRegister";
 import { getStoreInfo } from "@/app/actions/store-info";
 import { buildPrimaryColorStyle } from "@/lib/color-utils";
 import type { Metadata } from "next";
@@ -35,6 +36,7 @@ export default async function RootLayout({
       <body suppressHydrationWarning={true}>
         <AuthProvider>
           {children}
+          <ServiceWorkerRegister />
           <Toaster position="top-right" containerStyle={{ zIndex: 100000 }} />
         </AuthProvider>
       </body>

@@ -170,6 +170,19 @@ const Sidebar = ({ storeInfo = null }: { storeInfo?: StoreInfo | null }) => {
               </Link>
             </div>
 
+            {/* Live Chat */}
+            <div className="flex flex-col gap-1">
+              <Link
+                className={`flex items-center font-normal rounded-lg gap-2.5 py-2.5 px-3 text-sm ease-out duration-200 hover:bg-blue/10 hover:text-blue text-dark-2 bg-transparent ${pathname === "/admin/chat" ? "bg-blue/10 text-blue" : ""}`}
+                href="/admin/chat"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                Live Chat
+              </Link>
+            </div>
+
             {/* Homepage Content (Collapsible) */}
             <div className="flex flex-col gap-1">
               <button 
